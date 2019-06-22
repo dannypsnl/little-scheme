@@ -1,8 +1,11 @@
 .PHONY: build test install
-build:
-	@meson target
+build: target
+	@cd target && cmake -G Ninja ..
 	@ninja -C target
 test: build
-	@ninja -C target test
+	@./target/src/tests
 install: build
 	@ninja -C target install
+
+target:
+	@mkdir -p target

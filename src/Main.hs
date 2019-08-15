@@ -1,6 +1,7 @@
 module Main where
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
+import Control.Monad (liftM)
 
 main :: IO ()
 main = do
@@ -19,6 +20,11 @@ parseExpr :: Parser ScmValue
 parseExpr = parseAtom
   <|> parseString
   <|> parseNumber
+  <|> parseQuoted
+  <|> do char '('
+         x <- try parseList <|> parsePair
+         char ')'
+         return x
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -26,7 +32,7 @@ spaces = skipMany1 space
 data ScmValue =
   Atom String
   | List [ScmValue]
-  | DottedList [ScmValue] ScmValue
+  | Pair [ScmValue] ScmValue
   | Number Integer
   | String String
   | Bool Bool
@@ -54,3 +60,17 @@ parseNumber = do
   num <- many1 digit
   return $ Number (read num :: Integer)
 
+parseList :: Parser ScmValue
+parseList = liftM List $ sepBy parseExpr spaces
+
+parsePair :: Parser ScmValue
+parsePair = do
+    head <- endBy parseExpr spaces
+    tail <- char '.' >> spaces >> parseExpr
+    return $ Pair head tail
+
+parseQuoted :: Parser ScmValue
+parseQuoted = do
+    char '\''
+    x <- parseExpr
+    return $ List [Atom "quote", x]

@@ -1,9 +1,9 @@
-
 module Parser (
+  ScmValue(..),
   parseExpr
 ) where
-import Text.ParserCombinators.Parsec hiding (spaces)
-import Control.Monad (liftM)
+import           Control.Monad                 (liftM)
+import           Text.ParserCombinators.Parsec hiding (spaces)
 
 instance Show ScmValue where
   show = showValue
@@ -59,7 +59,7 @@ parseAtom = do
   return $ case atom of
     "#t" -> Bool True
     "#f" -> Bool False
-    _ -> Atom atom
+    _    -> Atom atom
 
 parseNumber :: Parser ScmValue
 parseNumber = do

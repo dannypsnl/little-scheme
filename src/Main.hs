@@ -1,15 +1,14 @@
 module Main where
-import Parser
+import qualified Interpreter                   as Interpreter
+import           Parser
 
-import qualified System.Environment as Env
+import qualified System.Environment            as Env
 import qualified Text.ParserCombinators.Parsec as Parsec
 
 main :: IO ()
-main = do
-  (expr:_) <- Env.getArgs
-  putStrLn (readExpr expr)
+main = Env.getArgs >>= print . Interpreter.eval . readExpr . head
 
-readExpr :: String -> String
+readExpr :: String -> ScmValue
 readExpr input = case Parsec.parse parseExpr "lisp" input of
-  Left err -> "no match: " ++ show err
-  Right val -> "found expression: " ++ show val
+  Left err  -> String $ "no match: " ++ show err
+  Right val -> val

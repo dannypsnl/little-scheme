@@ -1,7 +1,7 @@
 module Interpreter (
   eval
 ) where
-import           Parser
+import           Parser (ScmValue (..))
 
 eval :: ScmValue -> ScmValue
 eval val@(String _)             = val

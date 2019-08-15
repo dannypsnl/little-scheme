@@ -1,14 +1,14 @@
 module Main where
-import qualified Interpreter                   as Interpreter
-import           Parser
+import           Interpreter                   (eval)
+import           Parser                        (ScmValue (..), parseExpr)
 
-import qualified System.Environment            as Env
-import qualified Text.ParserCombinators.Parsec as Parsec
+import           System.Environment            (getArgs)
+import           Text.ParserCombinators.Parsec (parse)
 
 main :: IO ()
-main = Env.getArgs >>= print . Interpreter.eval . readExpr . head
+main = getArgs >>= print . eval . readExpr . head
 
 readExpr :: String -> ScmValue
-readExpr input = case Parsec.parse parseExpr "lisp" input of
+readExpr input = case parse parseExpr "lisp" input of
   Left err  -> String $ "no match: " ++ show err
   Right val -> val

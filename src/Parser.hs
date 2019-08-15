@@ -5,21 +5,6 @@ module Parser (
 import           Control.Monad                 (liftM)
 import           Text.ParserCombinators.Parsec hiding (spaces)
 
-instance Show ScmValue where
-  show = showValue
-
-showValue :: ScmValue -> String
-showValue (String str) = "\"" ++ str ++ "\""
-showValue (Atom name) = name
-showValue (Number num) = show num
-showValue (Bool True) = "#t"
-showValue (Bool False) = "#f"
-showValue (List contents) = "(" ++ unwordsList contents ++ ")"
-showValue (Pair head tail) = "(" ++ unwordsList head ++ " . " ++ showValue tail ++ ")"
-
-unwordsList :: [ScmValue] -> String
-unwordsList = unwords . map showValue
-
 data ScmValue =
     Atom String
     | List [ScmValue]
@@ -80,3 +65,18 @@ parseQuoted = do
     char '\''
     x <- parseExpr
     return $ List [Atom "quote", x]
+
+instance Show ScmValue where
+  show = showValue
+
+showValue :: ScmValue -> String
+showValue (String str) = "\"" ++ str ++ "\""
+showValue (Atom name) = name
+showValue (Number num) = show num
+showValue (Bool True) = "#t"
+showValue (Bool False) = "#f"
+showValue (List contents) = "(" ++ unwordsList contents ++ ")"
+showValue (Pair head tail) = "(" ++ unwordsList head ++ " . " ++ showValue tail ++ ")"
+
+unwordsList :: [ScmValue] -> String
+unwordsList = unwords . map showValue

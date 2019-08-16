@@ -7,7 +7,7 @@ in
 mkDerivation {
   pname = "little-scheme";
   version = "0.1.0";
-  src = ./.;
+  src = stdenv.lib.sourceFilesBySuffices ./. [".hs" ".cabal" "LICENSE"];
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [ base parsec ];

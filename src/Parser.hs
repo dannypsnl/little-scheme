@@ -2,7 +2,7 @@ module Parser (
   ScmValue(..),
   parseExpr
 ) where
-import           Control.Monad                 (liftM)
+import           Control.Applicative           (Applicative (..))
 import           Text.ParserCombinators.Parsec hiding (spaces)
 
 data ScmValue =
@@ -52,7 +52,7 @@ parseNumber = do
   return $ Number (read num :: Integer)
 
 parseList :: Parser ScmValue
-parseList = liftM List $ sepBy parseExpr spaces
+parseList = List <$> sepBy parseExpr spaces
 
 parsePair :: Parser ScmValue
 parsePair = do

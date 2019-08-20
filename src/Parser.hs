@@ -2,8 +2,11 @@ module Parser (
   ScmValue(..),
   parseExpr
 ) where
-import           Control.Applicative           (Applicative (..))
-import           Text.ParserCombinators.Parsec hiding (spaces)
+import           Control.Applicative (Applicative (..))
+import           Text.Parsec         (endBy, many, many1, noneOf, sepBy,
+                                      skipMany1, space, try, (<|>))
+import           Text.Parsec.Char    (char, digit, letter, oneOf)
+import           Text.Parsec.String  (Parser)
 
 data ScmValue =
     Atom String

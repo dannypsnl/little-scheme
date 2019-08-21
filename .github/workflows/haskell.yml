@@ -13,4 +13,5 @@ jobs:
       run: cabal install --only-dependencies
     - name: Build
       run: |
+        cabal update
         cabal build

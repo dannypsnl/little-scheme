@@ -10,8 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install dependencies
-      run: cabal install --only-dependencies
-    - name: Build
       run: |
         cabal update
+        cabal install --only-dependencies
+    - name: Build
+      run: |
         cabal build

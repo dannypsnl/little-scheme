@@ -1,0 +1,42 @@
+steps:
+  - imports:
+      # - global: Align the import names and import list throughout the entire
+      #   file.
+      align: none
+      # Folowing options affect only import list alignment.
+      #
+      # List align has following options:
+      #
+      # - after_alias: Import list is aligned with end of import including
+      #   'as' and 'hiding' keywords.
+      #
+      #   > import qualified Data.List      as List (concat, foldl, foldr, head,
+      #   >                                          init, last, length)
+      #
+      # - with_alias: Import list is aligned with start of alias or hiding.
+      #
+      #   > import qualified Data.List      as List (concat, foldl, foldr, head,
+      #   >                                 init, last, length)
+      #
+      # - new_line: Import list starts always on new line.
+      #
+      #   > import qualified Data.List      as List
+      #   >     (concat, foldl, foldr, head, init, last, length)
+      list_align: after_alias
+      # - inline: This option will put as much specs on same line as possible.
+      long_list_align: inline
+      # List padding determines indentation of import list on lines after import.
+      # This option affects 'list_align' and 'long_list_align'.
+      list_padding: 4
+      # - true: There is single space between Foldable type and list of it's
+      #   functions.
+      #
+      #   > import Data.Foldable (Foldable (fold, foldl, foldMap))
+      #
+      # - false: There is no space between Foldable type and list of it's
+      #   functions.
+      #
+      #   > import Data.Foldable (Foldable(fold, foldl, foldMap))
+      #
+      # Default: true
+      separate_lists: false

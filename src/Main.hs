@@ -1,9 +1,9 @@
 module Main where
-import           Interpreter        (eval)
-import           Parser             (ScmValue (..), parseExpr)
+import Interpreter (eval)
+import Parser (ScmValue(..), parseExpr)
 
-import           System.Environment (getArgs)
-import           Text.Parsec        (parse)
+import System.Environment (getArgs)
+import Text.Parsec (parse)
 
 main :: IO ()
 main = getArgs >>= print . eval . readExpr . head

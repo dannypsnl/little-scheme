@@ -1,7 +1,7 @@
 module Interpreter (
   eval
 ) where
-import           Parser (ScmValue (..))
+import Parser (ScmValue(..))
 
 eval :: ScmValue -> ScmValue
 eval val@(String _)             = val
@@ -34,6 +34,6 @@ unpackNumber (String n) =
   in
     if null parsed
       then 0
-      else fst $ parsed !! 0
+      else fst $ head parsed
 unpackNumber (List [n]) = unpackNumber n
 unpackNumber _ = 0

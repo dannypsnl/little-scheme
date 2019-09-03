@@ -3,8 +3,8 @@ module Parser (
   parseExpr
 ) where
 import Control.Applicative (Applicative(..))
-import Text.Parsec (endBy, many, many1, noneOf, sepBy, skipMany1, space, try,
-                    (<|>))
+import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1,
+                    space, try, (<|>))
 import Text.Parsec.Char (char, digit, letter, oneOf)
 import Text.Parsec.String (Parser)
 
@@ -24,10 +24,11 @@ parseExpr = parseAtom
   <|> parseString
   <|> parseNumber
   <|> parseQuoted
-  <|> do char '('
-         x <- try parseList <|> parsePair
-         char ')'
-         return x
+  <|> parens (try parseList <|> parsePair)
+
+-- between takes open and close paresr and returns a Parser to Parser function at here
+parens :: Parser a -> Parser a
+parens = between (char '(') (char ')')
 
 spaces :: Parser ()
 spaces = skipMany1 space

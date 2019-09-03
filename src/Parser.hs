@@ -9,12 +9,12 @@ import Text.Parsec.Char (char, digit, letter, oneOf)
 import Text.Parsec.String (Parser)
 
 data ScmValue =
-    Atom String
-    | List [ScmValue]
-    | Pair [ScmValue] ScmValue
-    | Number Integer
-    | String String
-    | Bool Bool
+  Atom String
+  | List [ScmValue]
+  | Pair [ScmValue] ScmValue
+  | Number Integer
+  | String String
+  | Bool Bool
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -60,15 +60,15 @@ parseList = List <$> sepBy parseExpr spaces
 
 parsePair :: Parser ScmValue
 parsePair = do
-    head <- endBy parseExpr spaces
-    tail <- char '.' >> spaces >> parseExpr
-    return $ Pair head tail
+  head <- endBy parseExpr spaces
+  tail <- char '.' >> spaces >> parseExpr
+  return $ Pair head tail
 
 parseQuoted :: Parser ScmValue
 parseQuoted = do
-    char '\''
-    x <- parseExpr
-    return $ List [Atom "quote", x]
+  char '\''
+  x <- parseExpr
+  return $ List [Atom "quote", x]
 
 instance Show ScmValue where
   show = showValue

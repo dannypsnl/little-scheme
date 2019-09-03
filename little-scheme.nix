@@ -2,7 +2,7 @@
 let
   pkgs = import <nixpkgs> { };
   inherit (pkgs) haskellPackages;
-  parsec = haskellPackages.callHackage "parsec" "3.1.13.0" {};
+  parsec = haskellPackages.callHackage "parsec" "3.1.14.0" {};
 in
 mkDerivation {
   pname = "little-scheme";

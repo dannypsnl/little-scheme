@@ -1,8 +1,7 @@
-{ mkDerivation, base, stdenv }:
+{ mkDerivation, base, mtl, stdenv }:
 let
   pkgs = import <nixpkgs> { };
   inherit (pkgs) haskellPackages;
-  mtl = haskellPackages.callHackage "mtl" "2.2.2" {};
   parsec = haskellPackages.callHackage "parsec" "3.1.14.0" {};
 in
 mkDerivation {

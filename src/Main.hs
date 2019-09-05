@@ -1,14 +1,19 @@
 module Main where
-import Interpreter (eval)
+import Interpreter (ScmError(..), ThrowsError, eval, extractValue, trapError)
 import Parser (ScmValue(..), parseExpr)
 
+import Control.Monad (liftM)
+import Control.Monad.Except (throwError)
 import System.Environment (getArgs)
 import Text.Parsec (parse)
 
 main :: IO ()
-main = getArgs >>= print . eval . readExpr . head
+main = do
+  args <- getArgs
+  evaled <- return $ fmap show $ readExpr (head args) >>= eval
+  putStrLn $ extractValue $ trapError evaled
 
-readExpr :: String -> ScmValue
+readExpr :: String -> ThrowsError ScmValue
 readExpr input = case parse parseExpr "lisp" input of
-  Left err  -> String $ "no match: " ++ show err
-  Right val -> val
+  Left err  -> throwError $ Parser err
+  Right val -> return val

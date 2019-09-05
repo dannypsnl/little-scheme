@@ -2,6 +2,7 @@
 let
   pkgs = import <nixpkgs> { };
   inherit (pkgs) haskellPackages;
+  mtl = haskellPackages.callHackage "mtl" "2.2.2" {};
   parsec = haskellPackages.callHackage "parsec" "3.1.14.0" {};
 in
 mkDerivation {
@@ -10,6 +11,6 @@ mkDerivation {
   src = stdenv.lib.sourceFilesBySuffices ./. [".hs" ".cabal" "LICENSE"];
   isLibrary = false;
   isExecutable = true;
-  executableHaskellDepends = [ base parsec ];
+  executableHaskellDepends = [ base mtl parsec ];
   license = stdenv.lib.licenses.mit;
 }

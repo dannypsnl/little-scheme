@@ -1,6 +1,7 @@
 module Parser (
   ScmValue(..),
-  parseExpr
+  parseExpr,
+  unwordsList
 ) where
 import Control.Applicative (Applicative(..))
 import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1,

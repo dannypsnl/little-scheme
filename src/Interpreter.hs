@@ -6,8 +6,12 @@ import Parser (ScmValue(..))
 eval :: ScmValue -> ScmValue
 eval val@(String _)             = val
 eval val@(Number _)             = val
+-- #t
+-- #f
 eval val@(Bool _)               = val
+-- '()
 eval (List [Atom "quote", val]) = val
+-- (+ 1 2 3)
 eval (List (Atom func : args))  = apply func $ map eval args
 
 apply :: String -> [ScmValue] -> ScmValue
@@ -29,9 +33,7 @@ numberBinaryOp op params = Number $ foldl1 op $ map unpackNumber params
 unpackNumber :: ScmValue -> Integer
 unpackNumber (Number n) = n
 unpackNumber (String n) =
-  let
-    parsed = reads n :: [(Integer, String)]
-  in
+  let parsed = reads n :: [(Integer, String)] in
     if null parsed
       then 0
       else fst $ head parsed

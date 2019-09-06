@@ -41,16 +41,16 @@ primitives = [
   ("=", numberBoolBinaryOp (==)),
   ("<", numberBoolBinaryOp (<)),
   (">", numberBoolBinaryOp (>)),
-  ("/=", numberBoolBinaryOp   (/=)),
-  (">=", numberBoolBinaryOp   (>=)),
-  ("<=", numberBoolBinaryOp   (<=)),
-  ("&&", boolBoolBinaryOp   (&&)),
-  ("||", boolBoolBinaryOp   (||)),
-  ("string=?", stringBoolBinaryOp   (==)),
-  ("string<?", stringBoolBinaryOp   (<)),
-  ("string>?", stringBoolBinaryOp   (>)),
-  ("string<=?", stringBoolBinaryOp   (<=)),
-  ("string>=?", stringBoolBinaryOp   (>=))
+  ("/=", numberBoolBinaryOp (/=)),
+  (">=", numberBoolBinaryOp (>=)),
+  ("<=", numberBoolBinaryOp (<=)),
+  ("&&", boolBoolBinaryOp (&&)),
+  ("||", boolBoolBinaryOp (||)),
+  ("string=?", stringBoolBinaryOp (==)),
+  ("string<?", stringBoolBinaryOp (<)),
+  ("string>?", stringBoolBinaryOp (>)),
+  ("string<=?", stringBoolBinaryOp (<=)),
+  ("string>=?", stringBoolBinaryOp (>=))
   ]
 
 boolBinaryOp :: (ScmValue -> ThrowsError a) -> (a -> a -> Bool) -> [ScmValue] -> ThrowsError ScmValue
@@ -72,8 +72,13 @@ numberBinaryOp op singleVal@[_] = throwError $ NumArgs 2 singleVal
 numberBinaryOp op params        = Number . foldl1 op <$> mapM unpackNumber params
 
 unpackString :: ScmValue -> ThrowsError String
+-- Normal format, `"abcd"`
 unpackString (String s) = return s
+-- Number can be a string for string functions
+-- e.g. `(string=? 1 "1")`
 unpackString (Number s) = return $ show s
+-- Bool can be a string for string functions
+-- e.g. `(string=? "#t" #t)`
 unpackString (Bool s)   = return $ show s
 unpackString notString  = throwError $ TypeMismatch "string" notString
 
@@ -101,7 +106,6 @@ data ScmError =
   | NotFunction String String
   | UnboundVar String String
   | Default String
-
 
 showError :: ScmError -> String
 showError (UnboundVar message varname)  = message ++ ": " ++ varname

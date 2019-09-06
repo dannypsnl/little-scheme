@@ -9,6 +9,7 @@ import Parser (ScmValue(..), unwordsList)
 
 import Control.Monad.Except (catchError, throwError)
 import Text.Parsec.Error (ParseError)
+import Text.Read (readMaybe)
 
 eval :: ScmValue -> ThrowsError ScmValue
 eval val@(String _)             = return val
@@ -81,12 +82,14 @@ unpackBool (Bool b) = return b
 unpackBool notBool  = throwError $ TypeMismatch "boolean" notBool
 
 unpackNumber :: ScmValue -> ThrowsError Integer
+-- Normal format `1`, `2`, `10`
 unpackNumber (Number n) = return n
-unpackNumber (String n) =
-  let parsed = reads n in
-    if null parsed
-      then throwError $ TypeMismatch "number" $ String n
-      else return $ fst $ head parsed
+-- String can be a number for function takes number, e.g. `(+ 1 "2")`
+unpackNumber (String n) = case readMaybe n of
+  Nothing -> throwError $ TypeMismatch "number" $ String n
+  Just a -> return a
+-- When list only contains one element then we can use it as number
+-- e.g. `(+ 1 '(2))`
 unpackNumber (List [n]) = unpackNumber n
 unpackNumber notNum = throwError $ TypeMismatch "number" notNum
 

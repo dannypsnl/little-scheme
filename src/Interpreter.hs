@@ -36,12 +36,49 @@ primitives = [
   ("/", numberBinaryOp div),
   ("mod", numberBinaryOp mod),
   ("quotient", numberBinaryOp quot),
-  ("remainder", numberBinaryOp rem)]
+  ("remainder", numberBinaryOp rem),
+  ("=", numberBoolBinaryOp (==)),
+  ("<", numberBoolBinaryOp (<)),
+  (">", numberBoolBinaryOp (>)),
+  ("/=", numberBoolBinaryOp   (/=)),
+  (">=", numberBoolBinaryOp   (>=)),
+  ("<=", numberBoolBinaryOp   (<=)),
+  ("&&", boolBoolBinaryOp   (&&)),
+  ("||", boolBoolBinaryOp   (||)),
+  ("string=?", stringBoolBinaryOp   (==)),
+  ("string<?", stringBoolBinaryOp   (<)),
+  ("string>?", stringBoolBinaryOp   (>)),
+  ("string<=?", stringBoolBinaryOp   (<=)),
+  ("string>=?", stringBoolBinaryOp   (>=))
+  ]
+
+boolBinaryOp :: (ScmValue -> ThrowsError a) -> (a -> a -> Bool) -> [ScmValue] -> ThrowsError ScmValue
+boolBinaryOp unpack op args =
+  if length args /= 2
+  then throwError $ NumArgs 2 args
+  else do
+    left <- unpack $ head args
+    right <- unpack $ args !! 1
+    return $ Bool $ left `op` right
+
+numberBoolBinaryOp  = boolBinaryOp unpackNumber
+stringBoolBinaryOp  = boolBinaryOp unpackString
+boolBoolBinaryOp = boolBinaryOp unpackBool
 
 numberBinaryOp :: (Integer -> Integer -> Integer) -> [ScmValue] -> ThrowsError ScmValue
 numberBinaryOp op           []  = throwError $ NumArgs 2 []
 numberBinaryOp op singleVal@[_] = throwError $ NumArgs 2 singleVal
 numberBinaryOp op params        = Number . foldl1 op <$> mapM unpackNumber params
+
+unpackString :: ScmValue -> ThrowsError String
+unpackString (String s) = return s
+unpackString (Number s) = return $ show s
+unpackString (Bool s)   = return $ show s
+unpackString notString  = throwError $ TypeMismatch "string" notString
+
+unpackBool :: ScmValue -> ThrowsError Bool
+unpackBool (Bool b) = return b
+unpackBool notBool  = throwError $ TypeMismatch "boolean" notBool
 
 unpackNumber :: ScmValue -> ThrowsError Integer
 unpackNumber (Number n) = return n

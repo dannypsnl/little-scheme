@@ -14,12 +14,18 @@ import Text.Read (readMaybe)
 eval :: ScmValue -> ThrowsError ScmValue
 eval val@(String _)             = return val
 eval val@(Number _)             = return val
--- #t
--- #f
+-- `#t`
+-- `#f`
 eval val@(Bool _)               = return val
--- '()
+-- `'()`
 eval (List [Atom "quote", val]) = return val
--- (+ 1 2 3)
+-- `(if (= 3 3) 1 2)`
+eval (List [Atom "if", pred, left, right]) = do
+  result <- eval pred
+  case result of
+    Bool False -> eval right
+    _ -> eval left
+-- `(+ 1 2 3)`
 eval (List (Atom func : args))  = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 

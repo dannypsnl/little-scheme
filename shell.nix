@@ -2,10 +2,15 @@ let
   pkgs = import <nixpkgs> { };
   inherit (pkgs) mkShell;
   inherit (pkgs) haskellPackages;
+  inherit (haskellPackages) cabal-install;
 
-  little-scheme = import ./default.nix;
   ghc = haskellPackages.ghcWithPackages (pkgs: with pkgs; [base mtl]);
+  dependencies = import ./deps.nix;
 in
 mkShell {
-  buildInputs = [ little-scheme ghc haskellPackages.cabal-install ];
+  buildInputs = [
+    ghc
+    cabal-install
+    dependencies
+  ];
 }

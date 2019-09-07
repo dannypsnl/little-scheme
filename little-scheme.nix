@@ -1,15 +1,10 @@
-{ mkDerivation, base, mtl, stdenv }:
-let
-  pkgs = import <nixpkgs> { };
-  inherit (pkgs) haskellPackages;
-  parsec = haskellPackages.callHackage "parsec" "3.1.14.0" {};
-in
+{ mkDerivation, base, mtl, dependencies, stdenv }:
 mkDerivation {
   pname = "little-scheme";
   version = "0.1.0";
   src = stdenv.lib.sourceFilesBySuffices ./. [".hs" ".cabal" "LICENSE"];
   isLibrary = false;
   isExecutable = true;
-  executableHaskellDepends = [ base mtl parsec ];
+  executableHaskellDepends = [ base mtl dependencies ];
   license = stdenv.lib.licenses.mit;
 }

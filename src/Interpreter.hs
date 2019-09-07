@@ -24,7 +24,7 @@ eval (List [Atom "if", pred, left, right]) = do
   result <- eval pred
   case result of
     Bool False -> eval right
-    _ -> eval left
+    _          -> eval left
 -- `(+ 1 2 3)`
 eval (List (Atom func : args))  = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -57,7 +57,41 @@ primitives = [
   , ("string>?", stringBoolBinaryOp (>))
   , ("string<=?", stringBoolBinaryOp (<=))
   , ("string>=?", stringBoolBinaryOp (>=))
+  , ("car", car)
+  , ("cdr", cdr)
+  , ("cons", cons)
   ]
+
+cons :: [ScmValue] -> ThrowsError ScmValue
+-- `(cons 'a '())` -> `(a)`
+cons [x, List []]       = return $ List [x]
+-- `(cons 'a '(b c))` -> `(a b c)`
+cons [x, List xs]       = return $ List $ x:xs
+-- `(cons 'a '(b . c))` -> `(a b . c)`
+cons [x, Pair xs right] = return $ Pair (x:xs) right
+-- `(cons 'a 'b)` -> `(a . b)`
+cons [x, y]             = return $ Pair [x] y
+cons bad                = throwError $ NumArgs 2 bad
+
+car :: [ScmValue] -> ThrowsError ScmValue
+-- `(car '(1 2))` -> `1`
+car [List (x:xs)]   = return x
+-- `(car '(1 2 . 3))` -> `1`
+car [Pair (x:xs) _] = return x
+-- `(car 3)`, car can't work out of pair
+car [bad]           = throwError $ TypeMismatch "pair" bad
+-- `(car 1 2)`, car only takes one argument
+car badList         = throwError $ NumArgs 1 badList
+
+cdr :: [ScmValue] -> ThrowsError ScmValue
+-- `(cdr '(1 2 3))` -> `(2 3)`
+cdr [List (x:xs)]   = return $ List xs
+-- `(cdr '(2 . 3))` -> `3`
+cdr [Pair [_] x]    = return x
+-- `(cdr '(1 2 . 3))` -> `(2 . 3)`
+cdr [Pair (_:xs) x] = return $ Pair xs x
+cdr [bad]           = throwError $ TypeMismatch "pair" bad
+cdr badList         = throwError $ NumArgs 1 badList
 
 boolBinaryOp :: (ScmValue -> ThrowsError a) -> (a -> a -> Bool) -> [ScmValue] -> ThrowsError ScmValue
 boolBinaryOp unpack op args =
@@ -98,7 +132,7 @@ unpackNumber (Number n) = return n
 -- String can be a number for function takes number, e.g. `(+ 1 "2")`
 unpackNumber (String n) = case readMaybe n of
   Nothing -> throwError $ TypeMismatch "number" $ String n
-  Just a -> return a
+  Just a  -> return a
 -- When list only contains one element then we can use it as number
 -- e.g. `(+ 1 '(2))`
 unpackNumber (List [n]) = unpackNumber n

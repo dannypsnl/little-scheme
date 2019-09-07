@@ -5,6 +5,6 @@ mkDerivation {
   src = stdenv.lib.sourceFilesBySuffices ./. [".hs" ".cabal" "LICENSE"];
   isLibrary = false;
   isExecutable = true;
-  executableHaskellDepends = [ base mtl dependencies ];
+  executableHaskellDepends = [ base mtl ] ++ dependencies;
   license = stdenv.lib.licenses.mit;
 }

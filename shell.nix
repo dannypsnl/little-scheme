@@ -11,6 +11,5 @@ mkShell {
   buildInputs = [
     ghc
     cabal-install
-    dependencies
-  ];
+  ] ++ dependencies;
 }

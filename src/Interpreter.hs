@@ -37,26 +37,26 @@ apply func args =
 
 primitives :: [(String, [ScmValue] -> ThrowsError ScmValue)]
 primitives = [
-  ("+", numberBinaryOp (+)),
-  ("-", numberBinaryOp (-)),
-  ("*", numberBinaryOp (*)),
-  ("/", numberBinaryOp div),
-  ("mod", numberBinaryOp mod),
-  ("quotient", numberBinaryOp quot),
-  ("remainder", numberBinaryOp rem),
-  ("=", numberBoolBinaryOp (==)),
-  ("<", numberBoolBinaryOp (<)),
-  (">", numberBoolBinaryOp (>)),
-  ("/=", numberBoolBinaryOp (/=)),
-  (">=", numberBoolBinaryOp (>=)),
-  ("<=", numberBoolBinaryOp (<=)),
-  ("&&", boolBoolBinaryOp (&&)),
-  ("||", boolBoolBinaryOp (||)),
-  ("string=?", stringBoolBinaryOp (==)),
-  ("string<?", stringBoolBinaryOp (<)),
-  ("string>?", stringBoolBinaryOp (>)),
-  ("string<=?", stringBoolBinaryOp (<=)),
-  ("string>=?", stringBoolBinaryOp (>=))
+  ("+", numberBinaryOp (+))
+  , ("-", numberBinaryOp (-))
+  , ("*", numberBinaryOp (*))
+  , ("/", numberBinaryOp div)
+  , ("mod", numberBinaryOp mod)
+  , ("quotient", numberBinaryOp quot)
+  , ("remainder", numberBinaryOp rem)
+  , ("=", numberBoolBinaryOp (==))
+  , ("<", numberBoolBinaryOp (<))
+  , (">", numberBoolBinaryOp (>))
+  , ("/=", numberBoolBinaryOp (/=))
+  , (">=", numberBoolBinaryOp (>=))
+  , ("<=", numberBoolBinaryOp (<=))
+  , ("&&", boolBoolBinaryOp (&&))
+  , ("||", boolBoolBinaryOp (||))
+  , ("string=?", stringBoolBinaryOp (==))
+  , ("string<?", stringBoolBinaryOp (<))
+  , ("string>?", stringBoolBinaryOp (>))
+  , ("string<=?", stringBoolBinaryOp (<=))
+  , ("string>=?", stringBoolBinaryOp (>=))
   ]
 
 boolBinaryOp :: (ScmValue -> ThrowsError a) -> (a -> a -> Bool) -> [ScmValue] -> ThrowsError ScmValue

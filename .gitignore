@@ -1,3 +1,4 @@
 dist*
 result
 cabal.project.local*
+.direnv

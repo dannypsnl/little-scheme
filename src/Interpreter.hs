@@ -60,7 +60,25 @@ primitives = [
   , ("car", car)
   , ("cdr", cdr)
   , ("cons", cons)
+  , ("eq?", eqv)
+  , ("eqv?", eqv)
   ]
+
+eqv :: [ScmValue] -> ThrowsError ScmValue
+eqv [Bool a, Bool b] = return $ Bool $ a == b
+eqv [Number a, Number b] = return $ Bool $ a == b
+eqv [String a, String b] = return $ Bool $ a == b
+eqv [Atom a, Atom b] = return $ Bool $ a == b
+eqv [Pair xs x, Pair ys y] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
+-- first sure length is the same
+-- then check all elements are the same
+eqv [List a, List b] = return $ Bool $ length a == length b && all eqvPair (zip a b)
+  where eqvPair (x1, x2) = case eqv [x1, x2] of
+                             Left err -> False
+                             Right (Bool v) -> v
+-- different type is not equal value
+eqv [_, _] = return $ Bool False
+eqv badArgList = throwError $ NumArgs 2 badArgList
 
 cons :: [ScmValue] -> ThrowsError ScmValue
 -- `(cons 'a '())` -> `(a)`

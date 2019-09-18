@@ -4,8 +4,7 @@ module Parser (
   unwordsList
 ) where
 import Control.Applicative (Applicative(..))
-import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1,
-                    space, try, (<|>))
+import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1, space, try, (<|>))
 import Text.Parsec.Char (char, digit, letter, oneOf)
 import Text.Parsec.String (Parser)
 
@@ -49,7 +48,7 @@ parseAtom = do
   return $ case atom of
     "#t" -> Bool True
     "#f" -> Bool False
-    _    -> Atom atom
+    _ -> Atom atom
 
 parseNumber :: Parser ScmValue
 parseNumber = do

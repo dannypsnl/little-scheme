@@ -15,5 +15,5 @@ main = do
 
 readExpr :: String -> ThrowsError ScmValue
 readExpr input = case parse parseExpr "lisp" input of
-  Left err  -> throwError $ Parser err
+  Left err -> throwError $ Parser err
   Right val -> return val

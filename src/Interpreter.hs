@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Interpreter (
   ThrowsError,
   trapError,
@@ -62,7 +64,25 @@ primitives = [
   , ("cons", cons)
   , ("eq?", eqv)
   , ("eqv?", eqv)
+  , ("equal?", equal)
   ]
+
+equal :: [ScmValue] -> ThrowsError ScmValue
+equal [a, b] = do
+  primitiveEqual <- or <$> mapM (unpackEquals a b)
+                     [AnyUnpacker unpackNumber, AnyUnpacker unpackString, AnyUnpacker unpackBool]
+  eqvEquals <- eqv [a, b]
+  return $ Bool (primitiveEqual || let (Bool x) = eqvEquals in x)
+equal bad = throwError $ NumArgs 2 bad
+
+data Unpacker = forall a. Eq a => AnyUnpacker (ScmValue -> ThrowsError a)
+
+unpackEquals :: ScmValue -> ScmValue -> Unpacker -> ThrowsError Bool
+unpackEquals a b (AnyUnpacker unpacker) =
+  do u1 <- unpacker a
+     u2 <- unpacker b
+     return (u1 == u2)
+  `catchError` (const $ return False)
 
 eqv :: [ScmValue] -> ThrowsError ScmValue
 eqv [Bool a, Bool b] = return $ Bool $ a == b

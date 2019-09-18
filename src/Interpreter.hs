@@ -132,16 +132,14 @@ cdr [bad] = throwError $ TypeMismatch "pair" bad
 cdr badList = throwError $ NumArgs 1 badList
 
 boolBinaryOp :: (ScmValue -> ThrowsError a) -> (a -> a -> Bool) -> [ScmValue] -> ThrowsError ScmValue
-boolBinaryOp unpack op args =
-  if length args /= 2
-  then throwError $ NumArgs 2 args
-  else do
-    left <- unpack $ head args
-    right <- unpack $ args !! 1
-    return $ Bool $ left `op` right
+boolBinaryOp unpack op [a, b] = do
+  left <- unpack a
+  right <- unpack b
+  return $ Bool (left `op` right)
+boolBinaryOp unpack _ bad = throwError $ NumArgs 2 bad
 
-numberBoolBinaryOp  = boolBinaryOp unpackNumber
-stringBoolBinaryOp  = boolBinaryOp unpackString
+numberBoolBinaryOp = boolBinaryOp unpackNumber
+stringBoolBinaryOp = boolBinaryOp unpackString
 boolBoolBinaryOp = boolBinaryOp unpackBool
 
 numberBinaryOp :: (Integer -> Integer -> Integer) -> [ScmValue] -> ThrowsError ScmValue

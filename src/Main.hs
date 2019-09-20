@@ -24,7 +24,7 @@ repl = do
   minput <- getInputLine "> "
   case minput of
     Nothing -> outputStrLn "#bye"
-    Just input -> (liftIO $ evalAndPrint input) >> repl
+    Just input -> liftIO (evalAndPrint input) >> repl
 
 evalAndPrint :: String -> IO ()
 evalAndPrint expr = evalString expr >>= putStrLn

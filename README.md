@@ -11,3 +11,11 @@ A little scheme implementation
     ```
 2. (Not Zsh) https://github.com/direnv/direnv/blob/master/docs/hook.md
 3. `cabal build` and others commands are working now.
+
+### Using
+
+`little-scheme` supports two ways to evalute scheme program right now.
+
+With one argument such as `little-scheme "(+ 1 2 3)"` would directly evalute expression and return value.
+
+Without argument such as `little-scheme` would create a REPL environment.

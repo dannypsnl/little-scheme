@@ -1,6 +1,6 @@
 module Main where
-import Core (ScmError(..), ScmValue(..), ThrowsError, extractValue, trapError)
-import Interpreter (Env, eval, liftThrows, nullEnv, runIOThrows)
+import Core (Env, ScmError(..), ScmValue(..), ThrowsError, extractValue, trapError)
+import Interpreter (eval, liftThrows, primitiveBindings, runIOThrows)
 import Parser (parseExpr)
 
 import Control.Monad.Except (throwError)
@@ -13,9 +13,9 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [] -> runInputT defaultSettings (liftIO nullEnv >>= repl)
+    [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
     -- directly eval the input
-    [expr] -> nullEnv >>= flip evalAndPrint expr
+    [expr] -> primitiveBindings >>= flip evalAndPrint expr
     _ -> putStrLn "Program only takes 0 or 1 argument"
 
 type Repl a = InputT IO a
@@ -25,7 +25,7 @@ repl env = do
   minput <- getInputLine "> "
   case minput of
     Nothing -> outputStrLn "#bye"
-    Just input -> liftIO (evalAndPrint env input) >> (repl env)
+    Just input -> liftIO (evalAndPrint env input) >> repl env
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn

@@ -1,24 +1,18 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Interpreter (
-  Env,
   eval,
-  nullEnv,
   liftThrows,
-  runIOThrows
+  runIOThrows,
+  primitiveBindings
 ) where
-import Core (ScmError(..), ScmValue(..), ThrowsError, extractValue, trapError)
+import Core (Env, ScmError(..), ScmValue(..), ThrowsError, extractValue, nullEnv, showValue, trapError)
 
 import Control.Monad.Except (ExceptT, catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Maybe (isJust)
+import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Maybe (isJust, isNothing)
 import Text.Read (readMaybe)
-
-type Env = IORef [(String, IORef ScmValue)]
-
-nullEnv :: IO Env
-nullEnv = newIORef []
 
 type IOThrowsError = ExceptT ScmError IO
 
@@ -58,6 +52,14 @@ defineVar envRef var val = do
       writeIORef envRef ((var, valueRef) : env)
       return val
 
+bindVars :: Env -> [(String, ScmValue)] -> IO Env
+bindVars env bindings = readIORef env >>= extendEnv bindings >>= newIORef
+  where
+    extendEnv bindings env = fmap (++ env) (mapM addBinding bindings)
+    addBinding (var, val) = do
+      ref <- newIORef val
+      return (var, ref)
+
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env val@(String _) = return val
 eval env val@(Number _) = return val
@@ -74,16 +76,50 @@ eval env (List [Atom "if", pred, left, right]) = do
     Bool False -> eval env right
     _ -> eval env left
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
+-- `(define x 1)`
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
+-- `(define (f x y) (+ x y))`
+eval env (List (Atom "define" : List (Atom var : params) : body)) =
+  makeNormalFunc env params body >>= defineVar env var
+-- `(define (f x y . a) (+ x y a))`
+eval env (List (Atom "define" : Pair (Atom var : params) varargs : body)) =
+  makeVarArgs varargs env params body >>= defineVar env var
+-- `(lambda (x y) (+ x y))`
+eval env (List (Atom "lambda" : List params : body)) =
+  makeNormalFunc env params body
+eval env (List (Atom "lambda" : Pair params varargs : body)) =
+  makeVarArgs varargs env params body
+eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
+  makeVarArgs varargs env [] body
 -- `(+ 1 2 3)`
-eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env (List (function : args)) = do
+  -- get function value
+  func <- eval env function
+  argVals <- mapM (eval env) args
+  apply func argVals
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-apply :: String -> [ScmValue] -> ThrowsError ScmValue
-apply func args =
-  maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
-    ($ args)
-    (lookup func primitives)
+makeFunc varargs env params body = return $ Func (map showValue params) varargs body env
+makeNormalFunc = makeFunc Nothing
+makeVarArgs = makeFunc . Just . showValue
+
+apply :: ScmValue -> [ScmValue] -> IOThrowsError ScmValue
+apply (PrimitiveFunc f) args = liftThrows $ f args
+apply (Func params varargs body closure) args =
+  if num params /= num args && isNothing varargs
+    then throwError $ NumArgs (num params) args
+    else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+    where
+      num = toInteger . length
+      evalBody env = last <$> mapM (eval env) body
+      bindVarArgs arg env = case arg of
+        Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
+        Nothing -> return env
+      remainingArgs = drop (length params) args
+
+primitiveBindings :: IO Env
+primitiveBindings = nullEnv >>= (`bindVars` (map makePrimitiveFunc primitives))
+  where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
 
 primitives :: [(String, [ScmValue] -> ThrowsError ScmValue)]
 primitives = [

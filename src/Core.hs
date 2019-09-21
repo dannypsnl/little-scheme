@@ -1,13 +1,22 @@
 module Core (
+  Env,
+  nullEnv,
   ScmValue(..),
   ScmError(..),
   ThrowsError,
   extractValue,
   unwordsList,
-  trapError
+  trapError,
+  showValue
 ) where
 import Control.Monad.Except (ExceptT, catchError, runExceptT, throwError)
+import Data.IORef (IORef, newIORef)
 import Text.Parsec.Error (ParseError)
+
+type Env = IORef [(String, IORef ScmValue)]
+
+nullEnv :: IO Env
+nullEnv = newIORef []
 
 data ScmValue =
   Atom String
@@ -16,6 +25,11 @@ data ScmValue =
   | Number Integer
   | String String
   | Bool Bool
+  | PrimitiveFunc ([ScmValue] -> ThrowsError ScmValue)
+  | Func { params :: [String]
+           , vararg :: Maybe String
+           , body :: [ScmValue]
+           , closure :: Env }
 
 instance Show ScmValue where
   show = showValue
@@ -28,6 +42,12 @@ showValue (Bool True) = "#t"
 showValue (Bool False) = "#f"
 showValue (List contents) = "(" ++ unwordsList contents ++ ")"
 showValue (Pair head tail) = "(" ++ unwordsList head ++ " . " ++ showValue tail ++ ")"
+showValue (PrimitiveFunc _) = "<primitive>"
+showValue (Func {params = args, vararg = varargs}) =
+   "(lambda (" ++ unwords (map show args) ++
+      (case varargs of
+         Nothing -> ""
+         Just arg -> " . " ++ arg) ++ ") ...)"
 
 unwordsList :: [ScmValue] -> String
 unwordsList = unwords . map showValue

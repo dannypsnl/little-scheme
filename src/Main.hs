@@ -1,6 +1,7 @@
 module Main where
+import Core (ScmValue(..))
 import Interpreter (Env, ScmError(..), ThrowsError, eval, extractValue, liftThrows, nullEnv, runIOThrows, trapError)
-import Parser (ScmValue(..), parseExpr)
+import Parser (parseExpr)
 
 import Control.Monad.Except (throwError)
 import Control.Monad.Trans (liftIO)

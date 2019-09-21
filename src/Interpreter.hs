@@ -11,7 +11,7 @@ module Interpreter (
   liftThrows,
   runIOThrows
 ) where
-import Parser (ScmValue(..), unwordsList)
+import Core (ScmValue(..), unwordsList)
 
 import Control.Monad.Except (ExceptT, catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)

@@ -1,20 +1,12 @@
 module Parser (
-  ScmValue(..),
-  parseExpr,
-  unwordsList
+  parseExpr
 ) where
+import Core (ScmValue(..))
+
 import Control.Applicative (Applicative(..))
 import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1, space, try, (<|>))
 import Text.Parsec.Char (char, digit, letter, oneOf)
 import Text.Parsec.String (Parser)
-
-data ScmValue =
-  Atom String
-  | List [ScmValue]
-  | Pair [ScmValue] ScmValue
-  | Number Integer
-  | String String
-  | Bool Bool
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -69,18 +61,3 @@ parseQuoted = do
   char '\''
   x <- parseExpr
   return $ List [Atom "quote", x]
-
-instance Show ScmValue where
-  show = showValue
-
-showValue :: ScmValue -> String
-showValue (String str) = "\"" ++ str ++ "\""
-showValue (Atom name) = name
-showValue (Number num) = show num
-showValue (Bool True) = "#t"
-showValue (Bool False) = "#f"
-showValue (List contents) = "(" ++ unwordsList contents ++ ")"
-showValue (Pair head tail) = "(" ++ unwordsList head ++ " . " ++ showValue tail ++ ")"
-
-unwordsList :: [ScmValue] -> String
-unwordsList = unwords . map showValue

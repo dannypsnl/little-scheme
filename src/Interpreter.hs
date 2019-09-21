@@ -5,31 +5,84 @@ module Interpreter (
   trapError,
   extractValue,
   ScmError(..),
-  eval
+  Env,
+  eval,
+  nullEnv,
+  liftThrows,
+  runIOThrows
 ) where
 import Parser (ScmValue(..), unwordsList)
 
-import Control.Monad.Except (catchError, throwError)
+import Control.Monad.Except (ExceptT, catchError, runExceptT, throwError)
+import Control.Monad.Trans (liftIO)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.Maybe (isJust)
 import Text.Parsec.Error (ParseError)
 import Text.Read (readMaybe)
 
-eval :: ScmValue -> ThrowsError ScmValue
-eval val@(String _) = return val
-eval val@(Number _) = return val
--- `#t`
--- `#f`
-eval val@(Bool _) = return val
+type Env = IORef [(String, IORef ScmValue)]
+
+nullEnv :: IO Env
+nullEnv = newIORef []
+
+type IOThrowsError = ExceptT ScmError IO
+
+liftThrows :: ThrowsError a -> IOThrowsError a
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
+
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows act = extractValue <$> runExceptT (trapError act)
+
+isBound :: Env -> String -> IO Bool
+isBound env var = isJust . lookup var <$> readIORef env
+
+getVar :: Env -> String -> IOThrowsError ScmValue
+getVar envRef var = do
+  env <- liftIO $ readIORef envRef
+  maybe (throwError $ UnboundVar "Can not found variable" var)
+        (liftIO . readIORef)
+        (lookup var env)
+
+setVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
+setVar envRef var val = do
+  env <- liftIO $ readIORef envRef
+  maybe (throwError $ UnboundVar "Can not set an unbound variable" var)
+        (liftIO . (`writeIORef` val))
+        (lookup var env)
+  return val
+
+defineVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
+defineVar envRef var val = do
+  isDefined <- liftIO $ isBound envRef var
+  if isDefined
+    then setVar envRef var val >> return val
+    else liftIO $ do
+      valueRef <- newIORef val
+      env <- readIORef envRef
+      writeIORef envRef ((var, valueRef) : env)
+      return val
+
+eval :: Env -> ScmValue -> IOThrowsError ScmValue
+eval env val@(String _) = return val
+eval env val@(Number _) = return val
+-- `#t`, `#f`
+eval env val@(Bool _) = return val
+-- `a`
+eval env (Atom var) = getVar env var
 -- `'()`
-eval (List [Atom "quote", val]) = return val
+eval env (List [Atom "quote", val]) = return val
 -- `(if (= 3 3) 1 2)`
-eval (List [Atom "if", pred, left, right]) = do
-  result <- eval pred
+eval env (List [Atom "if", pred, left, right]) = do
+  result <- eval env pred
   case result of
-    Bool False -> eval right
-    _ -> eval left
+    Bool False -> eval env right
+    _ -> eval env left
+eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
+eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
 -- `(+ 1 2 3)`
-eval (List (Atom func : args)) = mapM eval args >>= apply func
-eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 apply :: String -> [ScmValue] -> ThrowsError ScmValue
 apply func args =

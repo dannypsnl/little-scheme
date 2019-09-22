@@ -2,23 +2,19 @@
 
 module Interpreter (
   eval,
-  liftThrows,
   runIOThrows,
+  bindVars,
   primitiveBindings
 ) where
-import Core (Env, ScmError(..), ScmValue(..), ThrowsError, extractValue, nullEnv, showValue, trapError)
+import Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
+import Parser (readExpr, readExprList)
 
-import Control.Monad.Except (ExceptT, catchError, runExceptT, throwError)
+import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (isJust, isNothing)
+import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
-
-type IOThrowsError = ExceptT ScmError IO
-
-liftThrows :: ThrowsError a -> IOThrowsError a
-liftThrows (Left err) = throwError err
-liftThrows (Right val) = return val
 
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows act = extractValue <$> runExceptT (trapError act)
@@ -91,6 +87,8 @@ eval env (List (Atom "lambda" : Pair params varargs : body)) =
   makeVarArgs varargs env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
+eval env (List [Atom "load", String filename]) =
+  load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`
 eval env (List (function : args)) = do
   -- get function value
@@ -108,7 +106,7 @@ apply (PrimitiveFunc f) args = liftThrows $ f args
 apply (Func params varargs body closure) args =
   if num params /= num args && isNothing varargs
     then throwError $ NumArgs (num params) args
-    else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+    else liftIO (bindVars closure (zip params args)) >>= bindVarArgs varargs >>= evalBody
     where
       num = toInteger . length
       evalBody env = last <$> mapM (eval env) body
@@ -116,10 +114,55 @@ apply (Func params varargs body closure) args =
         Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
         Nothing -> return env
       remainingArgs = drop (length params) args
+apply (IOFunc f) args = f args
 
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (`bindVars` (map makePrimitiveFunc primitives))
-  where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
+primitiveBindings = nullEnv >>= (`bindVars` (ioPs ++ ps))
+  where
+    ioPs = map (makeFunc IOFunc) ioPrimitives
+    ps = map (makeFunc PrimitiveFunc) primitives
+    makeFunc funcType (var, func) = (var, funcType func)
+
+ioPrimitives :: [(String, [ScmValue] -> IOThrowsError ScmValue)]
+ioPrimitives = [
+  ("apply", applyProc)
+  , ("open-input-file", makePort ReadMode)
+  , ("open-output-file", makePort WriteMode)
+  , ("close-input-port", closePort)
+  , ("close-output-port", closePort)
+  , ("read", readProc)
+  , ("write", writeProc)
+  , ("read-contents", readContents)
+  , ("read-all", readAll)
+  ]
+
+applyProc :: [ScmValue] -> IOThrowsError ScmValue
+applyProc [func, List args] = apply func args
+applyProc (func : args) = apply func args
+
+makePort :: IOMode -> [ScmValue] -> IOThrowsError ScmValue
+makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode
+
+closePort :: [ScmValue] -> IOThrowsError ScmValue
+closePort [Port port] = liftIO (hClose port) >> return (Bool True)
+closePort _ = return $ Bool False
+
+readProc :: [ScmValue] -> IOThrowsError ScmValue
+readProc [] = readProc [Port stdin]
+readProc [Port port] = liftIO (hGetLine port) >>= liftThrows . readExpr
+
+writeProc :: [ScmValue] -> IOThrowsError ScmValue
+writeProc [obj] = writeProc [obj, Port stdout]
+writeProc [obj, Port port] = liftIO (hPrint port obj) >> return (Bool True)
+
+readContents :: [ScmValue] -> IOThrowsError ScmValue
+readContents [String filename] = fmap String $ liftIO $ readFile filename
+
+load :: String -> IOThrowsError [ScmValue]
+load filename = liftIO (readFile filename) >>= liftThrows . readExprList
+
+readAll :: [ScmValue] -> IOThrowsError ScmValue
+readAll [String filename] = List <$> load filename
 
 primitives :: [(String, [ScmValue] -> ThrowsError ScmValue)]
 primitives = [

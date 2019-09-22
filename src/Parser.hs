@@ -1,10 +1,13 @@
 module Parser (
-  parseExpr
+  parseExpr,
+  readExpr,
+  readExprList
 ) where
-import Core (ScmValue(..))
+import Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
 
-import Control.Applicative (Applicative(..))
+import Control.Monad.Except (throwError)
 import Text.Parsec (between, endBy, many, many1, noneOf, sepBy, skipMany1, space, try, (<|>))
+import Text.Parsec (parse)
 import Text.Parsec.Char (char, digit, letter, oneOf)
 import Text.Parsec.String (Parser)
 
@@ -61,3 +64,11 @@ parseQuoted = do
   char '\''
   x <- parseExpr
   return $ List [Atom "quote", x]
+
+readOrThrow :: Parser a -> String -> ThrowsError a
+readOrThrow parser input = case parse parser "scheme" input of
+  Left err -> throwError $ ParserErr err
+  Right val -> return val
+
+readExpr = readOrThrow parseExpr
+readExprList = readOrThrow (endBy parseExpr spaces)

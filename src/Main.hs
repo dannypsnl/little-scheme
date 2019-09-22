@@ -1,13 +1,12 @@
 module Main where
-import Core (Env, ScmError(..), ScmValue(..), ThrowsError, extractValue, trapError)
-import Interpreter (eval, liftThrows, primitiveBindings, runIOThrows)
-import Parser (parseExpr)
+import Core (Env, ScmValue(Atom, List, String), liftThrows)
+import Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
+import Parser (readExpr)
 
-import Control.Monad.Except (throwError)
 import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
 import System.Environment (getArgs)
-import Text.Parsec (parse)
+import System.IO (hPutStrLn, stderr)
 
 main :: IO ()
 main = do
@@ -15,7 +14,7 @@ main = do
   case args of
     [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
     -- directly eval the input
-    [expr] -> primitiveBindings >>= flip evalAndPrint expr
+    [expr] -> runOne args
     _ -> putStrLn "Program only takes 0 or 1 argument"
 
 type Repl a = InputT IO a
@@ -31,9 +30,9 @@ evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
   where
     evalString :: Env -> String -> IO String
-    evalString env expr = runIOThrows (fmap show $ (liftThrows $ readExpr expr) >>= eval env)
+    evalString env expr = runIOThrows (fmap show $ (liftThrows (readExpr expr)) >>= eval env)
 
-readExpr :: String -> ThrowsError ScmValue
-readExpr input = case parse parseExpr "scheme" input of
-  Left err -> throwError $ Parser err
-  Right val -> return val
+runOne :: [String] -> IO ()
+runOne args = do
+  env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String $ drop 1 args)])
+  runIOThrows (show <$> eval env (List [Atom "load", String (head args)])) >>= hPutStrLn stderr

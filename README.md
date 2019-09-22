@@ -16,6 +16,9 @@ A little scheme implementation
 
 `little-scheme` supports two ways to evalute scheme program right now.
 
-With one argument such as `little-scheme "(+ 1 2 3)"` would directly evalute expression and return value.
+- `little-scheme examples/hello.scm` would evalute `examples/hello.scm`.
+- `little-scheme` would create a REPL.
 
-Without argument such as `little-scheme` would create a REPL environment.
+### Reference
+
+- [R5RS](https://schemers.org/Documents/Standards/R5RS/)

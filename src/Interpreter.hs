@@ -49,7 +49,7 @@ defineVar envRef var val = do
       return val
 
 bindVars :: Env -> [(String, ScmValue)] -> IO Env
-bindVars env bindings = readIORef env >>= extendEnv bindings >>= newIORef
+bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
   where
     extendEnv bindings env = fmap (++ env) (mapM addBinding bindings)
     addBinding (var, val) = do
@@ -104,11 +104,10 @@ makeVarArgs = makeFunc . Just . showValue
 apply :: ScmValue -> [ScmValue] -> IOThrowsError ScmValue
 apply (PrimitiveFunc f) args = liftThrows $ f args
 apply (Func params varargs body closure) args =
-  if num params /= num args && isNothing varargs
-    then throwError $ NumArgs (num params) args
-    else liftIO (bindVars closure (zip params args)) >>= bindVarArgs varargs >>= evalBody
+  if length params /= length args && isNothing varargs
+    then throwError $ NumArgs (toInteger $ length params) args
+    else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
     where
-      num = toInteger . length
       evalBody env = last <$> mapM (eval env) body
       bindVarArgs arg env = case arg of
         Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]

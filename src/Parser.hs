@@ -16,7 +16,10 @@ readOrThrow parser input = case parse parser "scheme" input of
   Left err -> throwError $ ParserErr err
   Right val -> return val
 
+readExpr :: String -> ThrowsError ScmValue
 readExpr = readOrThrow parseExpr
+
+readExprList :: String -> ThrowsError [ScmValue]
 readExprList = readOrThrow (many parseExpr)
 
 parseExpr :: Parser ScmValue

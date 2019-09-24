@@ -1,13 +1,14 @@
-{ mkDerivation, base, haskeline, hspec, mtl, parsec, stdenv }:
+{ mkDerivation, base, filepath, haskeline, hspec, mtl, parsec
+, stdenv
+}:
 mkDerivation {
   pname = "little-scheme";
   version = "0.1.0.0";
   src = stdenv.lib.sourceFilesBySuffices ./. [".hs" ".cabal" "LICENSE"];
-  isLibrary = false;
+  isLibrary = true;
   isExecutable = true;
-  libraryHaskellDepends = [ base mtl parsec ];
+  libraryHaskellDepends = [ base filepath mtl parsec ];
   executableHaskellDepends = [ base haskeline mtl parsec ];
   testHaskellDepends = [ base hspec mtl ];
-  doHaddock = false;
   license = stdenv.lib.licenses.mit;
 }

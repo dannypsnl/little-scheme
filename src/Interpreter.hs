@@ -9,10 +9,13 @@ module Interpreter (
 import Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
 import Parser (readExpr, readExprList)
 
+import Control.Exception (IOException, catch)
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
+import System.Directory (findFile, getHomeDirectory)
+import System.FilePath (FilePath, (</>))
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
 
@@ -157,8 +160,20 @@ writeProc [obj, Port port] = liftIO (hPrint port obj) >> return (Bool True)
 readContents :: [ScmValue] -> IOThrowsError ScmValue
 readContents [String filename] = fmap String $ liftIO $ readFile filename
 
+defaultLibraryPath :: IO FilePath
+defaultLibraryPath = do
+  path <- getHomeDirectory
+  return $ path </> ".little-scheme/lib"
+
 load :: String -> IOThrowsError [ScmValue]
-load filename = liftIO (readFile filename) >>= liftThrows . readExprList
+load filename = liftIO (readFileWithDefaultPath filename) >>= liftThrows . readExprList
+
+readFileWithDefaultPath :: FilePath -> IO String
+readFileWithDefaultPath filename = do
+  libPath <- defaultLibraryPath
+  file <- findFile [libPath] filename
+  content <- readFile (fromMaybe filename file)
+  return content
 
 readAll :: [ScmValue] -> IOThrowsError ScmValue
 readAll [String filename] = List <$> load filename

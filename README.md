@@ -19,15 +19,6 @@ A little scheme implementation
 2. (Not Zsh) https://github.com/direnv/direnv/blob/master/docs/hook.md
 3. `cabal build` and others commands are working now.
 
-##### Refresh environment
-
-Run following commands to get new `shell.nix` and `little-scheme.nix`
-
-```bash
-$ cabal2nix . > little-scheme.nix
-$ cabal2nix . --shell > shell.nix
-```
-
 ##### Reference
 
 - [R5RS](https://schemers.org/Documents/Standards/R5RS/)

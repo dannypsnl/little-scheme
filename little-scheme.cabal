@@ -14,6 +14,7 @@ common deps
   default-language: Haskell2010
   build-depends:
     base == 4.*
+    , mtl == 2.2.2
   ghc-options:
     -Wall
 
@@ -26,8 +27,7 @@ executable little-scheme
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
   -- Other library packages from which modules are imported.
-  build-depends:       mtl == 2.2.2
-                       , parsec == 3.1.14.0
+  build-depends:       parsec == 3.1.14.0
                        , haskeline == 0.7.5.0
                        , lib-little-scheme
   -- Directories containing source files.
@@ -40,8 +40,7 @@ library lib-little-scheme
   other-modules:
   -- Directories containing source files.
   hs-source-dirs:      src
-  build-depends:       mtl == 2.2.2
-                       , parsec == 3.1.14.0
+  build-depends:       parsec == 3.1.14.0
 
 test-suite spec
   import: deps

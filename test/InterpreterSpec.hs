@@ -1,13 +1,21 @@
 module InterpreterSpec where
-
 import SpecHelper
+
+import Core (ScmValue(..), nullEnv)
+import Interpreter (eval)
+
+import Control.Monad.Except (runExceptT)
 
 spec :: Spec
 spec = do
-  describe "test spec" $ do
-    context "add 1 2 should be 3" $ do
-      it "1 + 2 = 3" $ do
-        1 + 2 `shouldBe` 3
+  describe "eval" $ do
+    context "No effect to environment" $ do
+      it "String should get the same String" $ do
+        env <- nullEnv
+        r <- runExceptT $ eval env (String "a")
+        case r of
+          Right (String v) -> v `shouldBe` "a"
+          _ -> undefined
 
 main :: IO ()
 main = hspec spec

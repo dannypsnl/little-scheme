@@ -5,7 +5,9 @@ import Parser (readExpr)
 
 import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
+import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory, removeDirectoryRecursive)
 import System.Environment (getArgs)
+import System.FilePath (FilePath, (</>))
 import System.IO (hPutStrLn, stderr)
 
 main :: IO ()
@@ -13,6 +15,8 @@ main = do
   args <- getArgs
   case args of
     [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
+    ["cleanup"] -> cleanup
+    ["init"] -> initLittleScheme
     -- directly eval the input
     [expr] -> runOne args
     _ -> putStrLn "Program only takes 0 or 1 argument"
@@ -36,3 +40,19 @@ runOne :: [String] -> IO ()
 runOne args = do
   env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String $ drop 1 args)])
   runIOThrows (show <$> eval env (List [Atom "load", String (head args)])) >>= hPutStrLn stderr
+
+initLittleScheme :: IO ()
+initLittleScheme = do
+  path <- littleSchemePath
+  createDirectoryIfMissing True (path </> "lib")
+  copyFile "lib/stdlib.scm" (path </> "lib/stdlib.scm")
+
+cleanup :: IO ()
+cleanup = do
+  path <- littleSchemePath
+  removeDirectoryRecursive path
+
+littleSchemePath :: IO FilePath
+littleSchemePath = do
+  homeDir <- getHomeDirectory
+  return $ homeDir </> ".little-scheme"

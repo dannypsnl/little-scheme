@@ -1,4 +1,9 @@
-dist*
+# nix
 result
+# cabal
+dist*
 cabal.project.local*
+# direnv
 .direnv
+# helper binaries
+bin

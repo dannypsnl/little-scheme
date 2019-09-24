@@ -1,4 +1,4 @@
-cabal-version:       2.4
+cabal-version:       3.0
 
 name:                little-scheme
 version:             0.1.0.0
@@ -10,22 +10,43 @@ maintainer:          dannypsnl@gmail.com
 -- README.
 extra-source-files:  CHANGELOG.md
 
+common deps
+  default-language: Haskell2010
+  build-depends:
+    base == 4.*
+    , mtl == 2.2.2
+  ghc-options:
+    -Wall
+
 executable little-scheme
+  import: deps
   -- .hs or .lhs file containing the Main module.
   main-is:             Main.hs
-
   -- Modules included in this executable, other than Main.
   other-modules:       Parser Interpreter Core
-
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
-
   -- Other library packages from which modules are imported.
-  build-depends:       base == 4.12.0.0
-                       , mtl == 2.2.2
-                       , parsec == 3.1.14.0
+  build-depends:       parsec == 3.1.14.0
                        , haskeline == 0.7.5.0
+                       , lib-little-scheme
   -- Directories containing source files.
   hs-source-dirs:      src
   default-language:    Haskell2010
 
+library lib-little-scheme
+  import: deps
+  exposed-modules:     Core Interpreter Parser
+  other-modules:
+  -- Directories containing source files.
+  hs-source-dirs:      src
+  build-depends:       parsec == 3.1.14.0
+
+test-suite spec
+  import: deps
+  type: exitcode-stdio-1.0
+  other-modules: InterpreterSpec SpecHelper
+  hs-source-dirs: test
+  main-is: Spec.hs
+  build-depends: hspec == 2.7.1
+                 , lib-little-scheme

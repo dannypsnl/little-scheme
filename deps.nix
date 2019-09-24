@@ -1,10 +1,9 @@
 let
   pkgs = import <nixpkgs> { };
   inherit (pkgs) haskellPackages;
-  parsec = haskellPackages.callHackage "parsec" "3.1.14.0" {};
-  haskeline = haskellPackages.callHackage "haskeline" "0.7.5.0" {};
 in
 [
-  parsec
-  haskeline
+  haskellPackages.callHackage "parsec" "3.1.14.0" {}
+  haskellPackages.callHackage "haskeline" "0.7.5.0" {}
+  haskellPackages.callHackage "hspec" "2.7.1" {}
 ]

@@ -90,6 +90,13 @@ eval env (List (Atom "lambda" : Pair params varargs : body)) =
   makeVarArgs varargs env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
+eval env (List (Atom "let" : List bindings : body)) = do
+  -- make a lambda, because `(let ((x 1)) x)` is equal to `((lambda (x) (x)) 1)`
+  func <- makeNormalFunc env (map (\(List [var, _]) -> var) bindings) body
+  -- take inits as the argument of lambda
+  argVals <- mapM (eval env . (\(List [_, init]) -> init)) bindings
+  -- apply lambda
+  apply func argVals
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`

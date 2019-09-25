@@ -92,11 +92,18 @@ eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
 eval env (List (Atom "let" : List bindings : body)) = do
   -- make a lambda, because `(let ((x 1)) x)` is equal to `((lambda (x) (x)) 1)`
-  func <- makeNormalFunc env (map (\(List [var, _]) -> var) bindings) body
+  params <- mapM takeParam bindings
+  func <- makeNormalFunc env params body
   -- take inits as the argument of lambda
   argVals <- mapM (eval env . (\(List [_, init]) -> init)) bindings
   -- apply lambda
   apply func argVals
+  where
+    takeParam :: ScmValue -> IOThrowsError ScmValue
+    takeParam (List [Atom var, _]) = return (Atom var)
+    takeParam bad = throwError $ BadSpecialForm "Expect a binding `(var, init)` but got" bad
+-- stand for the bad form such as: `(let 1 'body)`
+eval env (List (Atom "let" : bad : _restBody)) = throwError $ BadSpecialForm "Expect a list of bindings but got" bad
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`

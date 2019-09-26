@@ -36,6 +36,10 @@ data ScmValue =
   | IOFunc ([ScmValue] -> IOThrowsError ScmValue)
   | Port Handle
 
+instance Eq ScmValue where
+  (==) l r = (show l) == (show r)
+  (/=) l r = (show l) /= (show r)
+
 instance Show ScmValue where
   show = showValue
 
@@ -67,6 +71,10 @@ data ScmError =
   | NotFunction String String
   | UnboundVar String String
   | Default String
+
+instance Eq ScmError where
+  (==) l r = (show l) == (show r)
+  (/=) l r = (show l) /= (show r)
 
 showError :: ScmError -> String
 showError (UnboundVar message varname) = message ++ ": " ++ varname

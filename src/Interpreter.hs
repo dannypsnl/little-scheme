@@ -109,6 +109,10 @@ eval env (List (Atom "let" : List bindings : body)) = do
     takeInit (List [_, init]) = return init
 -- stand for the bad form such as: `(let 1 'body)`
 eval env (List (Atom "let" : bad : _restBody)) = throwError $ BadSpecialForm "Expect a list of bindings but got" bad
+eval env (List (Atom "let*" : List bindings : body)) = eval env convertedToLet
+  where
+    convertedToLet = foldr1 convert (bindings++body)
+    convert bind body = List [Atom "let", List [bind], body]
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`

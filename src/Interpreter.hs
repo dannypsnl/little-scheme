@@ -113,6 +113,21 @@ eval env (List (Atom "let*" : List bindings : body)) = eval env convertedToLet
   where
     convertedToLet = foldr1 convert (bindings++body)
     convert bind body = List [Atom "let", List [bind], body]
+eval env (List (Atom "letrec" : List bindings : body)) = do
+  -- letrec can be replace by a let with pre init a temp value and set! that var later
+  -- here we pre init the bindings
+  params <- mapM preInit bindings
+  -- here we create a reset bindings expressions
+  setBinds <- reset bindings
+  -- then evaluate a transform let
+  eval env (List (Atom "let" : List params : (setBinds ++ body)))
+  where
+    preInit :: ScmValue -> IOThrowsError ScmValue
+    preInit (List [Atom var, _]) = return (List [Atom var, List [Atom "quote", Atom var]])
+    preInit bad = throwError $ BadSpecialForm "Expect a binding but got" bad
+    -- @reset can believe that bad form already be reject by @preInit
+    reset :: [ScmValue] -> IOThrowsError [ScmValue]
+    reset bindings = return $ map (\(List b) -> List (Atom "set!" : b)) bindings
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`

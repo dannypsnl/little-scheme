@@ -11,29 +11,24 @@ import Data.Either (isRight)
 spec :: Spec
 spec = describe "eval" $ do
   context "No effect to environment" $ do
-    it "String should get the same String" $ do
-      env <- nullEnv
-      r <- runExceptT $ eval env (String "a")
-      r `shouldBe` Right (String "a")
-    it "cond should return the first successive clause expression" $ do
-      let code = readExpr "(cond ((> 3 2) 'greater) (#t 'less))"
-      env <- primitiveBindings
-      isRight code `shouldBe` True
-      r <- runExceptT $ eval env (extractCode code)
-      r `shouldBe` Right (Atom "greater")
+    it "String" $ runCode "\"a\"" >>= (`shouldBe` Right (String "a"))
+    it "Number" $ runCode "1" >>= (`shouldBe` Right (Number 1))
+    it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
+    it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
+    it "Bool #f" $ runCode "#f" >>= (`shouldBe` Right (Bool False))
+    it "cond should return the first successive clause expression" $
+      runCode "(cond ((> 3 2) 'greater) (#t 'less))" >>= (`shouldBe` Right (Atom "greater"))
   context "Effect environment" $ do
-    it "let* allow second binding is done in an env in which first binding is visible" $ do
-      env <- nullEnv
-      r <- runExceptT $ eval env (List (Atom "let*" : List [ List [ Atom "x", Number 1 ], List [ Atom "y", Atom "x" ] ] : [Atom "y"]))
-      r `shouldBe` Right (Number 1)
-    it "letrec allow binding use itself recursive" $ do
-      let code = readExpr "(letrec ((until (lambda (stop init) (if (> init stop) init (until stop (+ init 1)))))) (until 10 1))"
-      env <- primitiveBindings
-      isRight code `shouldBe` True
-      r <- runExceptT $ eval env (extractCode code)
-      r `shouldBe` Right (Number 11)
+    it "let* allow second binding is done in an env in which first binding is visible" $
+      runCode "(let* ((x 1) (y x)) y)" >>= (`shouldBe` Right (Number 1))
+    it "letrec allow binding use itself recursive" $
+      runCode "(letrec ((until (lambda (stop init) (if (> init stop) init (until stop (+ init 1)))))) (until 10 1))" >>= (`shouldBe` Right (Number 11))
   where
-    extractCode (Right code) = code
+    runCode code = do
+      let c = readExpr code
+      env <- primitiveBindings
+      isRight c `shouldBe` True
+      runExceptT $ eval env ((\(Right code) -> code) c)
 
 main :: IO ()
 main = hspec spec

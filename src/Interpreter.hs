@@ -74,6 +74,23 @@ eval env (List [Atom "if", pred, left, right]) = do
   case result of
     Bool False -> eval env right
     _ -> eval env left
+-- ```
+-- (cond
+--   ((> x 0) 'positive)
+--   (#t 'negative))
+-- ;;; 'positive
+-- (cond ((> 3 2) 'greater)
+--   ((< 3 2) 'less))
+-- ;;; 'greater
+-- ```
+eval env (List (Atom "cond" : clauses)) = range clauses
+  where
+    range [] = throwError $ NonExhaustivePattern clauses
+    range (List [pred, expr] : rest) = do
+      result <- eval env pred
+      case result of
+        Bool True -> eval env expr
+        _ -> range rest
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
 -- `(define x 1)`
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var

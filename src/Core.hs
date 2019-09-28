@@ -71,6 +71,7 @@ data ScmError =
   | NotFunction String String
   | UnboundVar String String
   | Default String
+  | NonExhaustivePattern [ScmValue]
 
 instance Eq ScmError where
   (==) l r = (show l) == (show r)
@@ -85,6 +86,7 @@ showError (NumArgs expected found) = "Expected " ++ show expected
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                        ++ ", found " ++ show found
 showError (ParserErr parseErr) = "Parse error at " ++ show parseErr
+showError (NonExhaustivePattern clauses) = "Non-exhaustive patterns: " ++ unwordsList clauses
 
 instance Show ScmError where show = showError
 

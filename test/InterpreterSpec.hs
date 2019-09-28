@@ -14,7 +14,6 @@ spec = describe "eval" $ do
     it "String" $ runCode "\"a\"" >>= (`shouldBe` Right (String "a"))
     it "Number" $ runCode "1" >>= (`shouldBe` Right (Number 1))
     it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
-    it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
     it "Bool #f" $ runCode "#f" >>= (`shouldBe` Right (Bool False))
     it "cond should return the first successive clause expression" $
       runCode "(cond ((> 3 2) 'greater) (#t 'less))" >>= (`shouldBe` Right (Atom "greater"))

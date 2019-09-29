@@ -90,6 +90,22 @@ eval env (List (Atom "cond" : clauses)) = range clauses
       case result of
         Bool True -> eval env expr
         _ -> range rest
+eval env (List (Atom "case" : key : clauses)) = range clauses
+  where
+    range [] = throwError $ NonExhaustivePattern clauses
+    range [List [Atom "else", expr]] =  eval env expr
+    range (List [List objects, expr] : rest) = do
+      result <- eval env key
+      matched <- rangeObjects objects
+      case matched of
+        Bool True -> eval env expr
+        _ -> range rest
+    rangeObjects [] = return $ Bool False
+    rangeObjects (object:rest) = do
+      matched <- (eval env (List (Atom "eqv?" : [object, key])))
+      case matched of
+        Bool True -> return $ Bool True
+        _ -> rangeObjects rest
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
 -- `(define x 1)`
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var

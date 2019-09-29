@@ -5,8 +5,8 @@ module Parser (
 import Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
 
 import Control.Monad.Except (throwError)
-import Text.Parsec (between, endBy, many, many1, manyTill, optionMaybe, parse, sepBy, try, (<|>))
-import Text.Parsec.Char (char, digit, letter, newline, noneOf, oneOf, space)
+import Text.Parsec (between, many, parse, try, (<|>))
+import Text.Parsec.Char (digit, letter, noneOf, oneOf)
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token

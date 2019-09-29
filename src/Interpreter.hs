@@ -9,7 +9,6 @@ module Interpreter (
 import Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
 import Parser (readExpr, readExprList)
 
-import Control.Exception (IOException, catch)
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Data.IORef (newIORef, readIORef, writeIORef)

@@ -1,13 +1,14 @@
 module Main where
 import Core (Env, ScmValue(Atom, List, String), liftThrows)
 import Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
+import Meta (defaultLibraryPath, littleSchemePath)
 import Parser (readExpr)
 
 import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
-import System.Directory (copyFile, createDirectoryIfMissing, getHomeDirectory, removeDirectoryRecursive)
+import System.Directory (copyFile, createDirectoryIfMissing, removeDirectoryRecursive)
 import System.Environment (getArgs)
-import System.FilePath (FilePath, (</>))
+import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 
 main :: IO ()
@@ -43,16 +44,11 @@ runOne args = do
 
 initLittleScheme :: IO ()
 initLittleScheme = do
-  path <- littleSchemePath
-  createDirectoryIfMissing True (path </> "lib")
-  copyFile "lib/stdlib.scm" (path </> "lib/stdlib.scm")
+  path <- defaultLibraryPath
+  createDirectoryIfMissing True path
+  copyFile "lib/stdlib.scm" (path </> "stdlib.scm")
 
 cleanup :: IO ()
 cleanup = do
   path <- littleSchemePath
   removeDirectoryRecursive path
-
-littleSchemePath :: IO FilePath
-littleSchemePath = do
-  homeDir <- getHomeDirectory
-  return $ homeDir </> ".little-scheme"

@@ -14,7 +14,7 @@ executable little-scheme
   -- .hs or .lhs file containing the Main module.
   main-is:             Main.hs
   -- Modules included in this executable, other than Main.
-  other-modules:       Parser Interpreter Core
+  other-modules:       Parser Interpreter Core Meta
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
   -- Other library packages from which modules are imported.
@@ -27,7 +27,7 @@ executable little-scheme
   default-language:    Haskell2010
 
 library
-  exposed-modules:     Core Interpreter Parser
+  exposed-modules:     Core Interpreter Parser Meta
   other-modules:
   -- Directories containing source files.
   hs-source-dirs:      src

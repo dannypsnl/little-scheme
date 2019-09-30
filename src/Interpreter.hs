@@ -7,14 +7,15 @@ module Interpreter (
   primitiveBindings
 ) where
 import Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
+import Meta (defaultLibraryPath)
 import Parser (readExpr, readExprList)
 
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (fromMaybe, isJust, isNothing)
-import System.Directory (findFile, getHomeDirectory)
-import System.FilePath (FilePath, (</>))
+import System.Directory (findFile)
+import System.FilePath (FilePath)
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
 
@@ -229,11 +230,6 @@ writeProc [obj, Port port] = liftIO (hPrint port obj) >> return (Bool True)
 
 readContents :: [ScmValue] -> IOThrowsError ScmValue
 readContents [String filename] = fmap String $ liftIO $ readFile filename
-
-defaultLibraryPath :: IO FilePath
-defaultLibraryPath = do
-  path <- getHomeDirectory
-  return $ path </> ".little-scheme/lib"
 
 load :: String -> IOThrowsError [ScmValue]
 load filename = liftIO (readFileWithDefaultPath filename) >>= liftThrows . readExprList

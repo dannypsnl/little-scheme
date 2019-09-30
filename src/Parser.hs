@@ -28,7 +28,7 @@ parseExpr =
   <|> parseString
   <|> parseNumber
   <|> (try parseNegNum <|> parseQuoted)
-  <|> (try parseList <|> parsePair)
+  <|> (try (parseList parens) <|> try (parseList brackets) <|> try (parsePair "()") <|> parsePair "[]")
 
 parseAtom :: Parser ScmValue
 parseAtom = do
@@ -54,16 +54,16 @@ parseNegNum = do
   d <- integer
   return $ Number . negate $ d
 
-parseList = List <$> parens (many parseExpr)
+parseList wrapper = List <$> wrapper (many parseExpr)
 
-parsePair :: Parser ScmValue
-parsePair = do
+parsePair :: String -> Parser ScmValue
+parsePair [leftWrapper, rightWrapper] = do
   head <- pairHead (many parseExpr)
   tail <- parseExpr
-  reservedOp ")"
+  reservedOp [rightWrapper]
   return $ Pair head tail
   where
-    pairHead = between (reservedOp "(") (reservedOp ".")
+    pairHead = between (reservedOp [leftWrapper]) (reservedOp ".")
 
 parseQuoted :: Parser ScmValue
 parseQuoted = do
@@ -75,6 +75,7 @@ identifier = Token.identifier lexer
 integer = Token.integer lexer
 reservedOp = Token.reservedOp lexer
 parens = Token.parens lexer
+brackets = Token.brackets lexer
 whiteSpace = Token.whiteSpace lexer
 
 lexer = Token.makeTokenParser languageDef

@@ -4,20 +4,22 @@ import Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
 import Meta (defaultLibraryPath, littleSchemePath)
 import Parser (readExpr)
 
+import Control.Monad (when)
 import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
-import System.Directory (copyFile, createDirectoryIfMissing, removeDirectoryRecursive)
+import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
 import System.Environment (getArgs)
 import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 
 main :: IO ()
 main = do
+  std <- littleSchemePath >>= doesDirectoryExist
+  when (not std) initLittleScheme
   args <- getArgs
   case args of
     [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
     ["cleanup"] -> cleanup
-    ["init"] -> initLittleScheme
     -- directly eval the input
     [expr] -> runOne args
     _ -> putStrLn "Program only takes 0 or 1 argument"

@@ -10,7 +10,6 @@ To install the interpreter you can:
 git clone https://github.com/dannypsnl/little-scheme.git
 cd little-scheme
 cabal install
-little-scheme init
 ```
 
 To complete remove all stuffs from Little Scheme you can:

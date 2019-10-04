@@ -5,11 +5,13 @@ module Parser (
 import Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
 
 import Control.Monad.Except (throwError)
+import Data.Maybe (isJust)
 import Text.Parsec (between, many, parse, try, (<|>))
 import Text.Parsec.Char (digit, letter, noneOf, oneOf)
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
+import Text.Read (readMaybe)
 
 readOrThrow :: Parser a -> String -> ThrowsError a
 readOrThrow parser input = case parse parser "scheme" input of
@@ -33,10 +35,14 @@ parseExpr =
 parseAtom :: Parser ScmValue
 parseAtom = do
   atom <- identifier
-  return $ case atom of
-    "#t" -> Bool True
-    "#f" -> Bool False
-    _ -> Atom atom
+  return $ convert atom
+  where
+    convert atom
+      | atom == "#t" = Bool True
+      | atom == "#f" = Bool False
+      | isNumber atom = Number (read atom)
+      | otherwise = Atom atom
+    isNumber s = isJust (readMaybe s :: Maybe Integer)
 
 parseString :: Parser ScmValue
 parseString = do

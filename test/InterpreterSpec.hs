@@ -15,6 +15,7 @@ spec = describe "eval" $ do
     it "Number" $ runCode "1" >>= (`shouldBe` Right (Number 1))
     it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
     it "Bool #f" $ runCode "#f" >>= (`shouldBe` Right (Bool False))
+    it "Negtive number should work" $ runCode "((lambda (x) (cond ((< x 0) (- 0 x)) (#t x))) -1)" >>= (`shouldBe` Right (Number 1))
     it "cond should return the first successive clause expression" $
       runCode "(cond ((> 3 2) 'greater) (#t 'less))"
       >>= (`shouldBe` Right (Atom "greater"))

@@ -4,15 +4,20 @@ on: [push, pull_request]
 
 jobs:
   build:
-   
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Install dependencies
-      run: |
-        cabal update
-        cabal install --only-dependencies
-    - name: Build
-      run: |
-        cabal build
+    - uses: actions/checkout@master
+    - uses: actions/setup-haskell@v1
+      with:
+        ghc-version: '8.6.5' # Exact version of ghc to use
+        cabal-version: '3.0'
+    - run: |
+        cabal new-update
+        cabal new-install --only-dependencies
+        cabal new-install hspec-discover
+        cabal new-configure --enable-tests
+    - run: |
+        cabal new-build
+    - run: |
+        cabal new-test

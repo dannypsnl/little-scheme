@@ -13,11 +13,11 @@ jobs:
         ghc-version: '8.6.5' # Exact version of ghc to use
         cabal-version: '3.0'
     - run: |
-        cabal update
-        cabal install --only-dependencies
-        cabal install hspec-discover
-        cabal configure --enable-tests
+        cabal new-update
+        cabal new-install --only-dependencies
+        cabal new-install hspec-discover
+        cabal new-configure --enable-tests
     - run: |
-        cabal build
+        cabal new-build
     - run: |
-        cabal test
+        cabal new-test

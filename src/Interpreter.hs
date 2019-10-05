@@ -86,20 +86,20 @@ eval env (List [Atom "if", pred, left, right]) = do
 eval env (List (Atom "cond" : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
-    range (List [pred, expr] : rest) = do
+    range (List (pred : expr) : rest) = do
       result <- eval env pred
       case result of
-        Bool True -> eval env expr
+        Bool True -> last <$> mapM (eval env) expr
         _ -> range rest
 eval env (List (Atom "case" : key : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
-    range [List [Atom "else", expr]] =  eval env expr
-    range (List [List objects, expr] : rest) = do
+    range [List (Atom "else" : expr)] = last <$> mapM (eval env) expr
+    range (List (List objects : expr) : rest) = do
       result <- eval env key
       matched <- rangeObjects objects
       case matched of
-        Bool True -> eval env expr
+        Bool True -> last <$> mapM (eval env) expr
         _ -> range rest
     rangeObjects [] = return $ Bool False
     rangeObjects (object:rest) = do

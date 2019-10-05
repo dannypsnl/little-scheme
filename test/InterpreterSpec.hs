@@ -31,6 +31,9 @@ spec = describe "eval" $ do
     it "case would halt program when no clause success" $
       runCode "(case 6 ((1 2) 'succ))"
       >>= (`shouldBe` Left (NonExhaustivePattern [List [List [Number 1, Number 2], List [Atom "quote", Atom "succ"]]]))
+    it "clause should be able to have several expressions" $
+      runCode "(case (* 2 3) ((2 3 5 7) 'prime) (else (define x 1) 'composite))"
+      >>= (`shouldBe` Right (Atom "composite"))
   context "Effect environment" $ do
     it "let* allow second binding is done in an env in which first binding is visible" $
       runCode "(let* ((x 1) (y x)) y)" >>= (`shouldBe` Right (Number 1))

@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 module InterpreterSpec where
 import SpecHelper
 
@@ -11,36 +12,58 @@ import Data.Either (isLeft, isRight)
 spec :: Spec
 spec = describe "eval" $ do
   context "No effect to environment" $ do
-    it "String" $ runCode "\"a\"" >>= (`shouldBe` Right (String "a"))
-    it "Number" $ runCode "1" >>= (`shouldBe` Right (Number 1))
-    it "Bool #t" $ runCode "#t" >>= (`shouldBe` Right (Bool True))
-    it "Bool #f" $ runCode "#f" >>= (`shouldBe` Right (Bool False))
-    it "Negtive number should work" $ runCode "((lambda (x) (cond ((< x 0) (- 0 x)) (#t x))) -1)" >>= (`shouldBe` Right (Number 1))
+    it "String" $ "\"a\"" `resultIs` String "a"
+    it "Number" $ "1" `resultIs` Number 1
+    it "Bool #t" $ "#t" `resultIs` Bool True
+    it "Bool #f" $ "#f" `resultIs` Bool False
+    it "Negtive number should work" $
+      [str|((lambda (x)
+               (cond
+                 ((< x 0) (- 0 x))
+                 (#t x)))
+           -1)
+      |] `resultIs` Number 1
     it "cond should return the first successive clause expression" $
-      runCode "(cond ((> 3 2) 'greater) (#t 'less))"
-      >>= (`shouldBe` Right (Atom "greater"))
+      [str|(cond
+             [(> 3 2) 'greater]
+             [#t 'less])
+      |] `resultIs` Atom "greater"
     it "cond would halt program when no clause success" $
       runCode "(cond (#f 'succ))"
       >>= (`shouldBe` Left (NonExhaustivePattern [List [Bool False, List [Atom "quote", Atom "succ"]]]))
     it "case should return the first successive clause expression" $
-      runCode "(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))"
-      >>= (`shouldBe` Right (Atom "composite"))
+      [str|(case (* 2 3)
+             ((2 3 5 7) 'prime)
+             ((1 4 6 8 9) 'composite))
+      |] `resultIs` Atom "composite"
     it "case else clause should return expression anyway" $
-      runCode "(case (* 2 3) ((2 3 5 7) 'prime) (else 'composite))"
-      >>= (`shouldBe` Right (Atom "composite"))
+      [str|(case (* 2 3)
+             ((2 3 5 7) 'prime)
+             (else 'composite))
+      |] `resultIs` Atom "composite"
     it "case would halt program when no clause success" $
       runCode "(case 6 ((1 2) 'succ))"
       >>= (`shouldBe` Left (NonExhaustivePattern [List [List [Number 1, Number 2], List [Atom "quote", Atom "succ"]]]))
     it "clause should be able to have several expressions" $
-      runCode "(case (* 2 3) ((2 3 5 7) 'prime) (else (define x 1) 'composite))"
-      >>= (`shouldBe` Right (Atom "composite"))
+      [str|(case (* 2 3)
+             ((2 3 5 7) 'prime)
+             (else (define x 1) 'composite))
+      |] `resultIs` Atom "composite"
   context "Effect environment" $ do
     it "let* allow second binding is done in an env in which first binding is visible" $
-      runCode "(let* ((x 1) (y x)) y)" >>= (`shouldBe` Right (Number 1))
+      [str|(let* ((x 1)
+                  (y x))
+            y)
+      |] `resultIs` Number 1
     it "letrec allow binding use itself recursive" $
-      runCode "(letrec ((until (lambda (stop init) (if (> init stop) init (until stop (+ init 1)))))) (until 10 1))"
-      >>= (`shouldBe` Right (Number 11))
+      [str|(letrec ([until (lambda (stop init)
+             (if (> init stop)
+               init
+               [until stop (+ init 1)]))])
+           (until 10 1))
+      |] `resultIs` Number 11
   where
+    resultIs code expectedValue = runCode code >>= (`shouldBe` Right expectedValue)
     runCode code = do
       let c = readExpr code
       env <- primitiveBindings

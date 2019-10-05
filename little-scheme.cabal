@@ -41,5 +41,6 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   build-depends: hspec == 2.7.1
+                 , template-haskell >= 2.14
                  , little-scheme
   default-language:    Haskell2010

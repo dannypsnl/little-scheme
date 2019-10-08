@@ -4,7 +4,7 @@ import Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
 import Meta (defaultLibraryPath, littleSchemePath)
 import Parser (readExpr)
 
-import Control.Monad (when)
+import Control.Monad (unless)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans (liftIO)
 import Data.Either (isLeft)
@@ -12,12 +12,12 @@ import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputSt
 import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
 import System.Environment (getArgs)
 import System.FilePath ((</>))
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPrint, stderr)
 
 main :: IO ()
 main = do
   std <- littleSchemePath >>= doesDirectoryExist
-  when (not std) initLittleScheme
+  unless std initLittleScheme
   args <- getArgs
   case args of
     [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
@@ -45,7 +45,7 @@ runOne (file:args) = do
   env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String args)])
   result <- runExceptT (eval env (List [Atom "load", String file]))
   case result of
-    Left e -> hPutStrLn stderr (show e)
+    Left e -> hPrint stderr (show e)
     Right _ -> putStr ""
 
 initLittleScheme :: IO ()

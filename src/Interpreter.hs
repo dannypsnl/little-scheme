@@ -128,7 +128,7 @@ eval env (List (Atom "let" : List bindings : body)) = do
   -- we use lambda to implement let
   -- create a lambda
   params <- mapM takeParam bindings
-  func <- return $ List (Atom "lambda" : List params : body)
+  let func = List (Atom "lambda" : List params : body)
   -- take inits as the argument of lambda
   args <- mapM takeInit bindings
   -- apply lambda
@@ -238,8 +238,7 @@ readFileWithDefaultPath :: FilePath -> IO String
 readFileWithDefaultPath filename = do
   libPath <- defaultLibraryPath
   file <- findFile [libPath] filename
-  content <- readFile (fromMaybe filename file)
-  return content
+  readFile (fromMaybe filename file)
 
 readAll :: [ScmValue] -> IOThrowsError ScmValue
 readAll [String filename] = List <$> load filename

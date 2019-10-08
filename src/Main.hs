@@ -5,7 +5,9 @@ import Meta (defaultLibraryPath, littleSchemePath)
 import Parser (readExpr)
 
 import Control.Monad (when)
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans (liftIO)
+import Data.Either (isLeft)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
 import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
 import System.Environment (getArgs)
@@ -41,7 +43,10 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 runOne :: [String] -> IO ()
 runOne (file:args) = do
   env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String args)])
-  runIOThrows (show <$> eval env (List [Atom "load", String file])) >>= hPutStrLn stderr
+  result <- runExceptT (eval env (List [Atom "load", String file]))
+  case result of
+    Left e -> hPutStrLn stderr (show e)
+    Right _ -> putStr ""
 
 initLittleScheme :: IO ()
 initLittleScheme = do

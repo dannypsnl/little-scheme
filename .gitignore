@@ -4,5 +4,6 @@ result
 dist*
 cabal.project.local*
 .ghc.environment.*
+*.tix
 # direnv
 .direnv

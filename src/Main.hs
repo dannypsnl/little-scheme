@@ -21,8 +21,7 @@ main = do
     [] -> runInputT defaultSettings (liftIO primitiveBindings >>= repl)
     ["cleanup"] -> cleanup
     -- directly eval the input
-    [expr] -> runOne args
-    _ -> putStrLn "Program only takes 0 or 1 argument"
+    (file:args) -> runOne (file:args)
 
 type Repl a = InputT IO a
 
@@ -40,9 +39,9 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
     evalString env expr = runIOThrows (fmap show $ (liftThrows (readExpr expr)) >>= eval env)
 
 runOne :: [String] -> IO ()
-runOne args = do
-  env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String $ drop 1 args)])
-  runIOThrows (show <$> eval env (List [Atom "load", String (head args)])) >>= hPutStrLn stderr
+runOne (file:args) = do
+  env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String args)])
+  runIOThrows (show <$> eval env (List [Atom "load", String file])) >>= hPutStrLn stderr
 
 initLittleScheme :: IO ()
 initLittleScheme = do

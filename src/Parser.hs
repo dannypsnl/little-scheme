@@ -9,6 +9,7 @@ import Data.Maybe (isJust)
 import Text.Parsec (between, many, parse, try, (<|>))
 import Text.Parsec.Char (digit, letter, noneOf, oneOf)
 import Text.Parsec.Language (emptyDef)
+import Text.Parsec.Prim (unexpected)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
 import Text.Read (readMaybe)
@@ -26,11 +27,21 @@ readExprList = readOrThrow (many parseExpr)
 
 parseExpr :: Parser ScmValue
 parseExpr =
-  parseAtom
+  parseBool
+  <|> parseAtom
   <|> parseString
   <|> parseNumber
   <|> (try parseNegNum <|> parseQuoted)
   <|> (try (parseList parens) <|> try (parseList brackets) <|> try (parsePair "()") <|> parsePair "[]")
+
+parseBool :: Parser ScmValue
+parseBool = do
+  lexeme (reservedOp "#")
+  boolValue <- parseAtom
+  case boolValue of
+    Atom "t" -> return $ Bool True
+    Atom "f" -> return $ Bool False
+    a -> unexpected (show a)
 
 parseAtom :: Parser ScmValue
 parseAtom = do
@@ -38,8 +49,6 @@ parseAtom = do
   return $ convert atom
   where
     convert atom
-      | atom == "#t" = Bool True
-      | atom == "#f" = Bool False
       | isNumber atom = Number (read atom)
       | otherwise = Atom atom
     isNumber s = isJust (readMaybe s :: Maybe Integer)
@@ -77,6 +86,7 @@ parseQuoted = do
   x <- parseExpr
   return $ List [Atom "quote", x]
 
+lexeme = Token.lexeme lexer
 identifier = Token.identifier lexer
 integer = Token.integer lexer
 reservedOp = Token.reservedOp lexer
@@ -89,7 +99,7 @@ lexer = Token.makeTokenParser languageDef
 -- reference: https://schemers.org/Documents/Standards/R5RS/r5rs.pdf
 -- page 5, section 2.1 Identifiers
 symbol :: Parser Char
-symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
 languageDef = emptyDef {
   Token.commentStart = "#|"

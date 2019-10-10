@@ -5,11 +5,12 @@ module Scheme.Parser (
 import Scheme.Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
 
 import Control.Monad.Except (throwError)
+import Data.Functor.Identity (Identity)
 import Data.Maybe (isJust)
 import Text.Parsec (between, many, parse, try, (<|>))
 import Text.Parsec.Char (digit, letter, noneOf, oneOf)
 import Text.Parsec.Language (emptyDef)
-import Text.Parsec.Prim (unexpected)
+import Text.Parsec.Prim (ParsecT, unexpected)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
 import Text.Read (readMaybe)
@@ -37,11 +38,11 @@ parseExpr =
 parseBool :: Parser ScmValue
 parseBool = do
   lexeme (reservedOp "#")
-  boolValue <- parseAtom
+  boolValue <- identifier
   case boolValue of
-    Atom "t" -> return $ Bool True
-    Atom "f" -> return $ Bool False
-    a -> unexpected (show a)
+    "t" -> return $ Bool True
+    "f" -> return $ Bool False
+    a -> unexpected a
 
 parseAtom :: Parser ScmValue
 parseAtom = do
@@ -69,16 +70,18 @@ parseNegNum = do
   d <- integer
   return $ Number . negate $ d
 
+parseList :: Functor f => (ParsecT String () Identity [ScmValue] -> f [ScmValue]) -> f ScmValue
 parseList wrapper = List <$> wrapper (many parseExpr)
 
 parsePair :: String -> Parser ScmValue
 parsePair [leftWrapper, rightWrapper] = do
-  head <- pairHead (many parseExpr)
-  tail <- parseExpr
+  pHead <- pairHead (many parseExpr)
+  pTail <- parseExpr
   reservedOp [rightWrapper]
-  return $ Pair head tail
+  return $ Pair pHead pTail
   where
     pairHead = between (reservedOp [leftWrapper]) (reservedOp ".")
+parsePair badPairWrapper = unexpected ("Expected () or [] but got: " ++ badPairWrapper)
 
 parseQuoted :: Parser ScmValue
 parseQuoted = do
@@ -86,14 +89,20 @@ parseQuoted = do
   x <- parseExpr
   return $ List [Atom "quote", x]
 
+lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
 lexeme = Token.lexeme lexer
+identifier :: ParsecT String () Identity String
 identifier = Token.identifier lexer
+integer :: ParsecT String () Identity Integer
 integer = Token.integer lexer
+reservedOp :: String -> ParsecT String () Identity ()
 reservedOp = Token.reservedOp lexer
+parens :: ParsecT String () Identity a -> ParsecT String () Identity a
 parens = Token.parens lexer
+brackets :: ParsecT String () Identity a -> ParsecT String () Identity a
 brackets = Token.brackets lexer
-whiteSpace = Token.whiteSpace lexer
 
+lexer :: Token.GenTokenParser String () Identity
 lexer = Token.makeTokenParser languageDef
 
 -- reference: https://schemers.org/Documents/Standards/R5RS/r5rs.pdf
@@ -101,6 +110,7 @@ lexer = Token.makeTokenParser languageDef
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
+languageDef :: Token.GenLanguageDef String () Identity
 languageDef = emptyDef {
   Token.commentStart = "#|"
   , Token.commentEnd = "|#"

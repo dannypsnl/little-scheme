@@ -4,7 +4,6 @@ module Scheme.Core (
   ScmValue(..),
   ScmError(..),
   ThrowsError,
-  extractValue,
   liftThrows,
   IOThrowsError,
   unwordsList,
@@ -105,6 +104,3 @@ liftThrows (Right val) = return val
 type ThrowsError = Either ScmError
 
 trapError action = catchError action (return . show)
-
-extractValue :: ThrowsError a -> a
-extractValue (Right val) = val

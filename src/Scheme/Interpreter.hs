@@ -6,18 +6,22 @@ module Scheme.Interpreter (
   bindVars,
   primitiveBindings
 ) where
-import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
+import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, liftThrows, nullEnv, showValue, trapError)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
 
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
+import Control.Monad.Trans.Except (ExceptT)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import System.Directory (findFile)
 import System.FilePath (FilePath)
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
+
+extractValue :: ThrowsError a -> a
+extractValue (Right val) = val
 
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows act = extractValue <$> runExceptT (trapError act)
@@ -52,9 +56,9 @@ defineVar envRef var val = do
       return val
 
 bindVars :: Env -> [(String, ScmValue)] -> IO Env
-bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
+bindVars envRef bindings = readIORef envRef >>= extendEnv >>= newIORef
   where
-    extendEnv bindings env = fmap (++ env) (mapM addBinding bindings)
+    extendEnv env = fmap (++ env) (mapM addBinding bindings)
     addBinding (var, val) = do
       ref <- newIORef val
       return (var, ref)
@@ -173,6 +177,7 @@ eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badFo
 
 makeFunc varargs env params body = return $ Func (map showValue params) varargs body env
 makeNormalFunc = makeFunc Nothing
+makeVarArgs :: ScmValue -> Env -> [ScmValue] -> [ScmValue] -> ExceptT ScmError IO ScmValue
 makeVarArgs = makeFunc . Just . showValue
 
 apply :: ScmValue -> [ScmValue] -> IOThrowsError ScmValue
@@ -192,9 +197,9 @@ apply (IOFunc f) args = f args
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (`bindVars` (ioPs ++ ps))
   where
-    ioPs = map (makeFunc IOFunc) ioPrimitives
-    ps = map (makeFunc PrimitiveFunc) primitives
-    makeFunc funcType (var, func) = (var, funcType func)
+    ioPs = map (makeFn IOFunc) ioPrimitives
+    ps = map (makeFn PrimitiveFunc) primitives
+    makeFn funcType (var, func) = (var, funcType func)
 
 ioPrimitives :: [(String, [ScmValue] -> IOThrowsError ScmValue)]
 ioPrimitives = [
@@ -215,6 +220,8 @@ applyProc (func : args) = apply func args
 
 makePort :: IOMode -> [ScmValue] -> IOThrowsError ScmValue
 makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode
+makePort _mode [bad] = throwError $ TypeMismatch "string" bad
+makePort _mode bad = throwError $ NumArgs 1 bad
 
 closePort :: [ScmValue] -> IOThrowsError ScmValue
 closePort [Port port] = liftIO (hClose port) >> return (Bool True)
@@ -230,6 +237,8 @@ writeProc [obj, Port port] = liftIO (hPrint port obj) >> return (Bool True)
 
 readContents :: [ScmValue] -> IOThrowsError ScmValue
 readContents [String filename] = fmap String $ liftIO $ readFile filename
+readContents [bad] = throwError $ TypeMismatch "string" bad
+readContents bad = throwError $ NumArgs 1 bad
 
 load :: String -> IOThrowsError [ScmValue]
 load filename = liftIO (readFileWithDefaultPath filename) >>= liftThrows . readExprList
@@ -301,9 +310,12 @@ eqv [Pair xs x, Pair ys y] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- first sure length is the same
 -- then check all elements are the same
 eqv [List a, List b] = return $ Bool $ length a == length b && all eqvPair (zip a b)
-  where eqvPair (x1, x2) = case eqv [x1, x2] of
+  where
+    eqvPair :: (ScmValue, ScmValue) -> Bool
+    eqvPair (x1, x2) = case eqv [x1, x2] of
                              Left _ -> False
                              Right (Bool v) -> v
+                             _ -> False
 -- different type is not equal value
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
@@ -356,7 +368,7 @@ boolBoolBinaryOp = boolBinaryOp unpackBool
 numberBinaryOp :: (Integer -> Integer -> Integer) -> [ScmValue] -> ThrowsError ScmValue
 numberBinaryOp _op           [] = throwError $ NumArgs 2 []
 numberBinaryOp _op singleVal@[_] = throwError $ NumArgs 2 singleVal
-numberBinaryOp op params = Number . foldl1 op <$> mapM unpackNumber params
+numberBinaryOp op parameters = Number . foldl1 op <$> mapM unpackNumber parameters
 
 unpackString :: ScmValue -> ThrowsError String
 -- Normal format, `"abcd"`

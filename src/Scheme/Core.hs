@@ -1,4 +1,4 @@
-module Core (
+module Scheme.Core (
   Env,
   nullEnv,
   ScmValue(..),

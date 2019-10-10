@@ -1,4 +1,4 @@
-module Meta (
+module Scheme.Meta (
   littleSchemePath
   , defaultLibraryPath
 ) where

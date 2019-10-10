@@ -1,8 +1,8 @@
-module Parser (
+module Scheme.Parser (
   readExpr,
   readExprList
 ) where
-import Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
+import Scheme.Core (ScmError(ParserErr), ScmValue(..), ThrowsError)
 
 import Control.Monad.Except (throwError)
 import Data.Maybe (isJust)

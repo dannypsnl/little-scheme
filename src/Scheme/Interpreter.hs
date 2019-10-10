@@ -1,14 +1,14 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Interpreter (
+module Scheme.Interpreter (
   eval,
   runIOThrows,
   bindVars,
   primitiveBindings
 ) where
-import Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
-import Meta (defaultLibraryPath)
-import Parser (readExpr, readExprList)
+import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, extractValue, liftThrows, nullEnv, showValue, trapError)
+import Scheme.Meta (defaultLibraryPath)
+import Scheme.Parser (readExpr, readExprList)
 
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)

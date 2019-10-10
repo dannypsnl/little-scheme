@@ -193,6 +193,7 @@ apply (Func params varargs body closure) args =
         Nothing -> return env
       remainingArgs = drop (length params) args
 apply (IOFunc f) args = f args
+apply bad _ = throwError $ NotFunction "Applying a not function value" bad
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (`bindVars` (ioPs ++ ps))

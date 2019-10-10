@@ -72,7 +72,7 @@ data ScmError =
   | TypeMismatch String ScmValue
   | ParserErr ParseError
   | BadSpecialForm String ScmValue
-  | NotFunction String String
+  | NotFunction String ScmValue
   | UnboundVar String String
   | Default String
   | NonExhaustivePattern [ScmValue]

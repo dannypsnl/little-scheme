@@ -50,7 +50,7 @@ showValue (Number num) = show num
 showValue (Bool True) = "#t"
 showValue (Bool False) = "#f"
 showValue (List contents) = "(" ++ unwordsList contents ++ ")"
-showValue (Pair head tail) = "(" ++ unwordsList head ++ " . " ++ showValue tail ++ ")"
+showValue (Pair pHead pTail) = "(" ++ unwordsList pHead ++ " . " ++ showValue pTail ++ ")"
 showValue (PrimitiveFunc _) = "<primitive>"
 showValue Func {params = args, vararg = varargs} =
    "(lambda (" ++ unwords (map show args) ++
@@ -64,7 +64,12 @@ unwordsList :: [ScmValue] -> String
 unwordsList = unwords . map showValue
 
 data ScmError =
+  -- NumArgs expected-number-of-arguments list-of-parameters-actual-got
   NumArgs Integer [ScmValue]
+  -- TypeMismatch type-string-format value-actual-got
+  --
+  -- example:
+  --   TypeMismatch "string" bad
   | TypeMismatch String ScmValue
   | ParserErr ParseError
   | BadSpecialForm String ScmValue
@@ -87,6 +92,7 @@ showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                        ++ ", found " ++ show found
 showError (ParserErr parseErr) = "Parse error at " ++ show parseErr
 showError (NonExhaustivePattern clauses) = "Non-exhaustive patterns: " ++ unwordsList clauses
+showError (Default message) = "Error: " ++ message
 
 instance Show ScmError where show = showError
 

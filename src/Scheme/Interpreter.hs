@@ -242,6 +242,8 @@ readFileWithDefaultPath filename = do
 
 readAll :: [ScmValue] -> IOThrowsError ScmValue
 readAll [String filename] = List <$> load filename
+readAll [bad] = throwError $ TypeMismatch "string" bad
+readAll bad = throwError $ NumArgs 1 bad
 
 primitives :: [(String, [ScmValue] -> ThrowsError ScmValue)]
 primitives = [
@@ -300,7 +302,7 @@ eqv [Pair xs x, Pair ys y] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- then check all elements are the same
 eqv [List a, List b] = return $ Bool $ length a == length b && all eqvPair (zip a b)
   where eqvPair (x1, x2) = case eqv [x1, x2] of
-                             Left err -> False
+                             Left _ -> False
                              Right (Bool v) -> v
 -- different type is not equal value
 eqv [_, _] = return $ Bool False
@@ -319,9 +321,9 @@ cons bad = throwError $ NumArgs 2 bad
 
 car :: [ScmValue] -> ThrowsError ScmValue
 -- `(car '(1 2))` -> `1`
-car [List (x:xs)] = return x
+car [List (x:_)] = return x
 -- `(car '(1 2 . 3))` -> `1`
-car [Pair (x:xs) _] = return x
+car [Pair (x:_) _] = return x
 -- `(car 3)`, car can't work out of pair
 car [bad] = throwError $ TypeMismatch "pair" bad
 -- `(car 1 2)`, car only takes one argument
@@ -329,7 +331,7 @@ car badList = throwError $ NumArgs 1 badList
 
 cdr :: [ScmValue] -> ThrowsError ScmValue
 -- `(cdr '(1 2 3))` -> `(2 3)`
-cdr [List (x:xs)] = return $ List xs
+cdr [List (_:xs)] = return $ List xs
 -- `(cdr '(2 . 3))` -> `3`
 cdr [Pair [_] x] = return x
 -- `(cdr '(1 2 . 3))` -> `(2 . 3)`
@@ -342,15 +344,18 @@ boolBinaryOp unpack op [a, b] = do
   left <- unpack a
   right <- unpack b
   return $ Bool (left `op` right)
-boolBinaryOp unpack _ bad = throwError $ NumArgs 2 bad
+boolBinaryOp _unpack _ bad = throwError $ NumArgs 2 bad
 
+numberBoolBinaryOp :: (Integer -> Integer -> Bool) -> [ScmValue] -> ThrowsError ScmValue
 numberBoolBinaryOp = boolBinaryOp unpackNumber
+stringBoolBinaryOp :: (String -> String -> Bool) -> [ScmValue] -> ThrowsError ScmValue
 stringBoolBinaryOp = boolBinaryOp unpackString
+boolBoolBinaryOp :: (Bool -> Bool -> Bool) -> [ScmValue] -> ThrowsError ScmValue
 boolBoolBinaryOp = boolBinaryOp unpackBool
 
 numberBinaryOp :: (Integer -> Integer -> Integer) -> [ScmValue] -> ThrowsError ScmValue
-numberBinaryOp op           [] = throwError $ NumArgs 2 []
-numberBinaryOp op singleVal@[_] = throwError $ NumArgs 2 singleVal
+numberBinaryOp _op           [] = throwError $ NumArgs 2 []
+numberBinaryOp _op singleVal@[_] = throwError $ NumArgs 2 singleVal
 numberBinaryOp op params = Number . foldl1 op <$> mapM unpackNumber params
 
 unpackString :: ScmValue -> ThrowsError String

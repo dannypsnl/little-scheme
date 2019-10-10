@@ -1,5 +1,5 @@
 module Main where
-import Scheme (prepareEnv, cleanup, runOne, createRepl)
+import Scheme (cleanup, createRepl, prepareEnv, runOne)
 
 import System.Environment (getArgs)
 
@@ -11,4 +11,4 @@ main = do
     [] -> createRepl
     ["cleanup"] -> cleanup
     -- directly eval the input
-    (file:args) -> runOne (file:args)
+    (file:args') -> runOne (file:args')

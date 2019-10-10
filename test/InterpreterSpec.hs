@@ -2,12 +2,11 @@
 module InterpreterSpec where
 import SpecHelper
 
-import Core (ScmError(..), ScmValue(..), liftThrows, nullEnv)
-import Interpreter (eval, primitiveBindings)
-import Parser (readExpr)
+import Scheme.Core (ScmError(..), ScmValue(..))
+import Scheme.Interpreter (eval, primitiveBindings)
+import Scheme.Parser (readExpr)
 
 import Control.Monad.Except (runExceptT)
-import Data.Either (isLeft, isRight)
 
 spec :: Spec
 spec = describe "eval" $ do
@@ -67,8 +66,9 @@ spec = describe "eval" $ do
     runCode code = do
       let c = readExpr code
       env <- primitiveBindings
-      isRight c `shouldBe` True
-      runExceptT $ eval env ((\(Right code) -> code) c)
+      case c of
+        Left err -> error (show err)
+        Right code' -> runExceptT $ eval env code'
 
 main :: IO ()
 main = hspec spec

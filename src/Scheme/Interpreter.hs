@@ -6,15 +6,14 @@ module Scheme.Interpreter (
   bindVars,
   primitiveBindings
 ) where
-import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, liftThrows, nullEnv, showValue, trapError)
+import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue, trapError)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
 
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.Except (ExceptT)
-import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import System.Directory (findFile)
 import System.FilePath (FilePath)
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
@@ -25,43 +24,6 @@ extractValue (Right val) = val
 
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows act = extractValue <$> runExceptT (trapError act)
-
-isBound :: Env -> String -> IO Bool
-isBound env var = isJust . lookup var <$> readIORef env
-
-getVar :: Env -> String -> IOThrowsError ScmValue
-getVar envRef var = do
-  env <- liftIO $ readIORef envRef
-  maybe (throwError $ UnboundVar "Can not found variable" var)
-        (liftIO . readIORef)
-        (lookup var env)
-
-setVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
-setVar envRef var val = do
-  env <- liftIO $ readIORef envRef
-  maybe (throwError $ UnboundVar "Can not set an unbound variable" var)
-        (liftIO . (`writeIORef` val))
-        (lookup var env)
-  return val
-
-defineVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
-defineVar envRef var val = do
-  isDefined <- liftIO $ isBound envRef var
-  if isDefined
-    then setVar envRef var val >> return val
-    else liftIO $ do
-      valueRef <- newIORef val
-      env <- readIORef envRef
-      writeIORef envRef ((var, valueRef) : env)
-      return val
-
-bindVars :: Env -> [(String, ScmValue)] -> IO Env
-bindVars envRef bindings = readIORef envRef >>= extendEnv >>= newIORef
-  where
-    extendEnv env = fmap (++ env) (mapM addBinding bindings)
-    addBinding (var, val) = do
-      ref <- newIORef val
-      return (var, ref)
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env val@(String _) = return val

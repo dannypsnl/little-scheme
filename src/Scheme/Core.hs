@@ -1,21 +1,65 @@
 module Scheme.Core (
-  Env,
-  nullEnv,
-  ScmValue(..),
-  ScmError(..),
-  ThrowsError,
-  liftThrows,
-  IOThrowsError,
-  unwordsList,
-  trapError,
-  showValue
+  Env
+  , nullEnv
+  , ScmValue(..)
+  , ScmError(..)
+  , ThrowsError
+  , liftThrows
+  , IOThrowsError
+  , unwordsList
+  , trapError
+  , showValue
+  , isBound
+  , getVar
+  , setVar
+  , defineVar
+  , bindVars
 ) where
 import Control.Monad.Except (ExceptT, catchError, throwError)
-import Data.IORef (IORef, newIORef)
+import Control.Monad.Trans (liftIO)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.Maybe (isJust)
 import System.IO (Handle)
 import Text.Parsec.Error (ParseError)
 
 type Env = IORef [(String, IORef ScmValue)]
+
+isBound :: Env -> String -> IO Bool
+isBound env var = isJust . lookup var <$> readIORef env
+
+getVar :: Env -> String -> IOThrowsError ScmValue
+getVar envRef var = do
+  env <- liftIO $ readIORef envRef
+  maybe (throwError $ UnboundVar "Can not found variable" var)
+        (liftIO . readIORef)
+        (lookup var env)
+
+setVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
+setVar envRef var val = do
+  env <- liftIO $ readIORef envRef
+  maybe (throwError $ UnboundVar "Can not set an unbound variable" var)
+        (liftIO . (`writeIORef` val))
+        (lookup var env)
+  return val
+
+defineVar :: Env -> String -> ScmValue -> IOThrowsError ScmValue
+defineVar envRef var val = do
+  isDefined <- liftIO $ isBound envRef var
+  if isDefined
+    then setVar envRef var val >> return val
+    else liftIO $ do
+      valueRef <- newIORef val
+      env <- readIORef envRef
+      writeIORef envRef ((var, valueRef) : env)
+      return val
+
+bindVars :: Env -> [(String, ScmValue)] -> IO Env
+bindVars envRef bindings = readIORef envRef >>= extendEnv >>= newIORef
+  where
+    extendEnv env = fmap (++ env) (mapM addBinding bindings)
+    addBinding (var, val) = do
+      ref <- newIORef val
+      return (var, ref)
 
 nullEnv :: IO Env
 nullEnv = newIORef []

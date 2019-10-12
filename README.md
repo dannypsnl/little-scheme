@@ -29,12 +29,13 @@ little-scheme cleanup
 
 1. Install [direnv](https://github.com/direnv/direnv)
 2. (If Zsh) Edit your `~/.zshrc` and add following code at the end
-    ```zsh
-    eval "$(direnv hook zsh)"
-    ```
-2. (Not Zsh) https://github.com/direnv/direnv/blob/master/docs/hook.md
-3. `cabal build` and others commands are working now.
+   ```zsh
+   eval "$(direnv hook zsh)"
+   ```
+3. (Not Zsh) https://github.com/direnv/direnv/blob/master/docs/hook.md
+4. `cabal build` and others commands are working now.
 
 ##### Reference
 
 - [R5RS](https://schemers.org/Documents/Standards/R5RS/)
+- [Writing-the-Cyclone-Scheme-Compiler](https://justinethier.github.io/cyclone/docs/Writing-the-Cyclone-Scheme-Compiler)

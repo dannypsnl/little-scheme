@@ -66,7 +66,6 @@ eval env (List (Atom "case" : key : clauses)) = range clauses
     range [] = throwError $ NonExhaustivePattern clauses
     range [List (Atom "else" : expr)] = last <$> mapM (eval env) expr
     range (List (List objects : expr) : rest) = do
-      result <- eval env key
       matched <- rangeObjects objects
       case matched of
         Bool True -> last <$> mapM (eval env) expr

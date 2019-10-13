@@ -6,7 +6,7 @@ module Scheme.Interpreter (
   bindVars,
   primitiveBindings
 ) where
-import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue, trapError)
+import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
 
@@ -15,7 +15,6 @@ import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.Except (ExceptT)
 import Data.Maybe (fromMaybe, isNothing)
 import System.Directory (findFile)
-import System.FilePath (FilePath)
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
 
@@ -24,6 +23,8 @@ extractValue (Right val) = val
 
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows act = extractValue <$> runExceptT (trapError act)
+  where
+    trapError action = catchError action (return . show)
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env val@(String _) = return val
@@ -69,7 +70,7 @@ eval env (List (Atom "case" : key : clauses)) = range clauses
         _ -> range rest
     rangeObjects [] = return $ Bool False
     rangeObjects (object:rest) = do
-      matched <- (eval env (List (Atom "eqv?" : [object, key])))
+      matched <- eval env (List (Atom "eqv?" : [object, key]))
       case matched of
         Bool True -> return $ Bool True
         _ -> rangeObjects rest
@@ -137,7 +138,9 @@ eval env (List (function : args)) = do
   apply func argVals
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+makeFunc :: Monad m => Maybe String -> Env -> [ScmValue] -> [ScmValue] -> m ScmValue
 makeFunc varargs env params body = return $ Func (map showValue params) varargs body env
+makeNormalFunc :: Env -> [ScmValue] -> [ScmValue] -> ExceptT ScmError IO ScmValue
 makeNormalFunc = makeFunc Nothing
 makeVarArgs :: ScmValue -> Env -> [ScmValue] -> [ScmValue] -> ExceptT ScmError IO ScmValue
 makeVarArgs = makeFunc . Just . showValue
@@ -147,7 +150,7 @@ apply (PrimitiveFunc f) args = liftThrows $ f args
 apply (Func params varargs body closure) args =
   if length params /= length args && isNothing varargs
     then throwError $ NumArgs (toInteger $ length params) args
-    else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
     where
       evalBody env = last <$> mapM (eval env) body
       bindVarArgs arg env = case arg of
@@ -262,7 +265,7 @@ unpackEquals a b (AnyUnpacker unpacker) =
   do u1 <- unpacker a
      u2 <- unpacker b
      return (u1 == u2)
-  `catchError` (const $ return False)
+  `catchError` const (return False)
 
 eqv :: [ScmValue] -> ThrowsError ScmValue
 eqv [Bool a, Bool b] = return $ Bool $ a == b

@@ -45,9 +45,7 @@ parseBool = do
     a -> unexpected a
 
 parseAtom :: Parser ScmValue
-parseAtom = do
-  atom <- identifier
-  return $ convert atom
+parseAtom = convert <$> identifier
   where
     convert atom
       | isNumber atom = Number (read atom)

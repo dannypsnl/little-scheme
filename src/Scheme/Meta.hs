@@ -2,8 +2,8 @@ module Scheme.Meta (
   littleSchemePath
   , defaultLibraryPath
 ) where
-import System.Directory (findFile, getHomeDirectory)
-import System.FilePath (FilePath, (</>))
+import System.Directory (getHomeDirectory)
+import System.FilePath ((</>))
 
 defaultLibraryPath :: IO FilePath
 defaultLibraryPath = do

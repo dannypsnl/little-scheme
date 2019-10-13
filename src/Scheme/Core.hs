@@ -7,7 +7,6 @@ module Scheme.Core (
   , liftThrows
   , IOThrowsError
   , unwordsList
-  , trapError
   , showValue
   , isBound
   , getVar
@@ -15,7 +14,7 @@ module Scheme.Core (
   , defineVar
   , bindVars
 ) where
-import Control.Monad.Except (ExceptT, catchError, throwError)
+import Control.Monad.Except (ExceptT, throwError)
 import Control.Monad.Trans (liftIO)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Maybe (isJust)
@@ -80,8 +79,8 @@ data ScmValue =
   | Port Handle
 
 instance Eq ScmValue where
-  (==) l r = (show l) == (show r)
-  (/=) l r = (show l) /= (show r)
+  (==) l r = show l == show r
+  (/=) l r = show l /= show r
 
 instance Show ScmValue where
   show = showValue
@@ -122,8 +121,8 @@ data ScmError =
   | NonExhaustivePattern [ScmValue]
 
 instance Eq ScmError where
-  (==) l r = (show l) == (show r)
-  (/=) l r = (show l) /= (show r)
+  (==) l r = show l == show r
+  (/=) l r = show l /= show r
 
 showError :: ScmError -> String
 showError (UnboundVar message varname) = message ++ ": " ++ varname
@@ -146,5 +145,3 @@ liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
 
 type ThrowsError = Either ScmError
-
-trapError action = catchError action (return . show)

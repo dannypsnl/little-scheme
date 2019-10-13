@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE NamedFieldPuns            #-}
 
 module Scheme.Interpreter (
   eval,
@@ -18,26 +19,27 @@ import System.Directory (findFile)
 import System.IO (IOMode(ReadMode, WriteMode), hClose, hGetLine, hPrint, openFile, stdin, stdout)
 import Text.Read (readMaybe)
 
-extractValue :: ThrowsError a -> a
-extractValue (Right val) = val
-
 runIOThrows :: IOThrowsError String -> IO String
-runIOThrows act = extractValue <$> runExceptT (trapError act)
+runIOThrows act = do
+  result <- runExceptT (trapError act)
+  case result of
+    Right val -> return val
+    Left err -> return $ show err
   where
     trapError action = catchError action (return . show)
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
-eval env val@(String _) = return val
-eval env val@(Number _) = return val
+eval _env val@(String _) = return val
+eval _env val@(Number _) = return val
 -- `#t`, `#f`
-eval env val@(Bool _) = return val
+eval _env val@(Bool _) = return val
 -- `a`
 eval env (Atom var) = getVar env var
 -- `'()`
-eval env (List [Atom "quote", val]) = return val
+eval _env (List [Atom "quote", val]) = return val
 -- `(if (= 3 3) 1 2)`
-eval env (List [Atom "if", pred, left, right]) = do
-  result <- eval env pred
+eval env (List [Atom "if", prediction, left, right]) = do
+  result <- eval env prediction
   case result of
     Bool False -> eval env right
     _ -> eval env left
@@ -53,11 +55,12 @@ eval env (List [Atom "if", pred, left, right]) = do
 eval env (List (Atom "cond" : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
-    range (List (pred : expr) : rest) = do
-      result <- eval env pred
+    range (List (prediction : expr) : rest) = do
+      result <- eval env prediction
       case result of
         Bool True -> last <$> mapM (eval env) expr
         _ -> range rest
+    range bad = throwError $ TypeMismatch "clause" (List bad)
 eval env (List (Atom "case" : key : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
@@ -68,6 +71,7 @@ eval env (List (Atom "case" : key : clauses)) = range clauses
       case matched of
         Bool True -> last <$> mapM (eval env) expr
         _ -> range rest
+    range bad = throwError $ TypeMismatch "clause" (List bad)
     rangeObjects [] = return $ Bool False
     rangeObjects (object:rest) = do
       matched <- eval env (List (Atom "eqv?" : [object, key]))
@@ -106,28 +110,31 @@ eval env (List (Atom "let" : List bindings : body)) = do
     takeParam bad = throwError $ BadSpecialForm "Expect a binding `(var, init)` but got" bad
     -- @takeInit can believe that bad form already be reject by @takeParam
     takeInit :: ScmValue -> IOThrowsError ScmValue
-    takeInit (List [_, init]) = return init
+    takeInit (List [_, initExpr]) = return initExpr
+    -- This condition is unlikely happened, but to ensure at future when we move it to others place it still work
+    -- we have to complete the pattern
+    takeInit bad = throwError $ BadSpecialForm "Expect a binding `(var, init)` but got" bad
 -- stand for the bad form such as: `(let 1 'body)`
-eval env (List (Atom "let" : bad : _restBody)) = throwError $ BadSpecialForm "Expect a list of bindings but got" bad
-eval env (List (Atom "let*" : List bindings : body)) = eval env convertedToLet
+eval _env (List (Atom "let" : bad : _wrapped)) = throwError $ BadSpecialForm "Expect a list of bindings but got" bad
+eval env (List (Atom "let*" : List bindings : wrappedExpressions)) = eval env convertedToLet
   where
-    convertedToLet = foldr1 convert (bindings++body)
-    convert bind body = List [Atom "let", List [bind], body]
-eval env (List (Atom "letrec" : List bindings : body)) = do
+    convertedToLet = foldr1 convert (bindings++wrappedExpressions)
+    convert bind wrappedExpr = List [Atom "let", List [bind], wrappedExpr]
+eval env (List (Atom "letrec" : List bindings : wrappedExpressions)) = do
   -- letrec can be replace by a let with pre init a temp value and set! that var later
   -- here we pre init the bindings
   params <- mapM preInit bindings
   -- here we create a reset bindings expressions
   setBinds <- reset bindings
   -- then evaluate a transform let
-  eval env (List (Atom "let" : List params : (setBinds ++ body)))
+  eval env (List (Atom "let" : List params : (setBinds ++ wrappedExpressions)))
   where
     preInit :: ScmValue -> IOThrowsError ScmValue
     preInit (List [Atom var, _]) = return (List [Atom var, List [Atom "quote", Atom var]])
     preInit bad = throwError $ BadSpecialForm "Expect a binding but got" bad
     -- @reset can believe that bad form already be reject by @preInit
     reset :: [ScmValue] -> IOThrowsError [ScmValue]
-    reset bindings = return $ map (\(List b) -> List (Atom "set!" : b)) bindings
+    reset binds = return $ map (\(List b) -> List (Atom "set!" : b)) binds
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`
@@ -136,7 +143,7 @@ eval env (List (function : args)) = do
   func <- eval env function
   argVals <- mapM (eval env) args
   apply func argVals
-eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval _env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 makeFunc :: Monad m => Maybe String -> Env -> [ScmValue] -> [ScmValue] -> m ScmValue
 makeFunc varargs env params body = return $ Func (map showValue params) varargs body env
@@ -147,10 +154,10 @@ makeVarArgs = makeFunc . Just . showValue
 
 apply :: ScmValue -> [ScmValue] -> IOThrowsError ScmValue
 apply (PrimitiveFunc f) args = liftThrows $ f args
-apply (Func params varargs body closure) args =
-  if length params /= length args && isNothing varargs
+apply Func {params, vararg, body, closure} args =
+  if length params /= length args && isNothing vararg
     then throwError $ NumArgs (toInteger $ length params) args
-    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+    else liftIO (bindVars closure $ zip params args) >>= bindVarArgs vararg >>= evalBody
     where
       evalBody env = last <$> mapM (eval env) body
       bindVarArgs arg env = case arg of
@@ -181,8 +188,11 @@ ioPrimitives = [
   ]
 
 applyProc :: [ScmValue] -> IOThrowsError ScmValue
+-- (apply f '(1 2 3))
 applyProc [func, List args] = apply func args
+-- (apply f 1 2 3)
 applyProc (func : args) = apply func args
+applyProc bad = throwError $ Default ("expected a function and a list of arguments or a list with a function as head but got: " ++ show bad)
 
 makePort :: IOMode -> [ScmValue] -> IOThrowsError ScmValue
 makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode
@@ -196,10 +206,12 @@ closePort _ = return $ Bool False
 readProc :: [ScmValue] -> IOThrowsError ScmValue
 readProc [] = readProc [Port stdin]
 readProc [Port port] = liftIO (hGetLine port) >>= liftThrows . readExpr
+readProc bad = throwError $ Default ("expected an object and a optional port(default port is stdin) but got: " ++ show bad)
 
 writeProc :: [ScmValue] -> IOThrowsError ScmValue
 writeProc [obj] = writeProc [obj, Port stdout]
 writeProc [obj, Port port] = liftIO (hPrint port obj) >> return (Bool True)
+writeProc bad = throwError $ Default ("expected an object and a optional port(default port is stdout) but got: " ++ show bad)
 
 readContents :: [ScmValue] -> IOThrowsError ScmValue
 readContents [String filename] = fmap String $ liftIO $ readFile filename

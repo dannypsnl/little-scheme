@@ -16,13 +16,14 @@ common shared-properties
     base == 4.*, mtl >= 2.2, filepath >= 1.4, directory >= 1.3, transformers >= 0.5
     , parsec >= 3.1
     , haskeline >= 0.7
+    , template-haskell >= 2.15
   ghc-options:
     -Wall
 
 executable little-scheme
   import: shared-properties
   main-is:             Main.hs
-  other-modules:       Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
+  other-modules:       Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta Scheme.Literal
   build-depends:       little-scheme
   -- Directories containing source files.
   hs-source-dirs:      src
@@ -30,7 +31,7 @@ executable little-scheme
 
 library
   import: shared-properties
-  exposed-modules:     Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
+  exposed-modules:     Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta Scheme.Literal
   other-modules:
   -- Directories containing source files.
   hs-source-dirs:      src

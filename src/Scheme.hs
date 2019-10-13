@@ -6,7 +6,7 @@ module Scheme (
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmValue(Atom, List, String), liftThrows)
 import Scheme.Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
-import Scheme.Meta (defaultLibraryPath, littleSchemePath)
+import Scheme.Meta (defaultLibraryPath, littleSchemePath, stdlibContent)
 import Scheme.Parser (readExpr)
 
 import Control.Monad (unless, when)
@@ -14,7 +14,7 @@ import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans (liftIO)
 import Data.Either (isLeft)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
-import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
 import System.FilePath ((</>))
 import System.IO (hPrint, stderr)
 
@@ -52,7 +52,7 @@ initLittleScheme :: IO ()
 initLittleScheme = do
   path <- defaultLibraryPath
   createDirectoryIfMissing True path
-  copyFile "lib/stdlib.scm" (path </> "stdlib.scm")
+  writeFile (path </> "stdlib.scm") stdlibContent
 
 cleanup :: IO ()
 cleanup = do

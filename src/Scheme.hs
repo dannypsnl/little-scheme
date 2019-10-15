@@ -5,7 +5,7 @@ module Scheme (
   , cleanup
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmValue(Atom, List, String), liftThrows)
-import Scheme.Interpreter (bindVars, eval', primitiveBindings, runIOThrows)
+import Scheme.Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
 import Scheme.Meta (defaultLibraryPath, littleSchemePath)
 import Scheme.Parser (readExpr)
 
@@ -39,12 +39,12 @@ evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env (liftThrows (readExpr expr)) >>= putStrLn
   where
     evalString :: Env -> IOThrowsError ScmValue -> IO String
-    evalString env' expr' = runIOThrows (fmap show $ expr' >>= eval' env')
+    evalString env' expr' = runIOThrows (fmap show $ expr' >>= eval env')
 
 runOne :: [String] -> IO ()
 runOne (file:args) = do
   env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String args)])
-  result <- runExceptT (eval' env (List [Atom "load", String file]))
+  result <- runExceptT (eval env (List [Atom "load", String file]))
   when (isLeft result) (hPrint stderr (show result))
 runOne [] = putStrLn "No file provided!"
 

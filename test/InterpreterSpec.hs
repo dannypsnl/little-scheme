@@ -3,7 +3,7 @@ module InterpreterSpec where
 import SpecHelper
 
 import Scheme.Core (ScmError(..), ScmValue(..))
-import Scheme.Interpreter (eval', primitiveBindings)
+import Scheme.Interpreter (eval, primitiveBindings)
 import Scheme.Parser (readExpr)
 
 import Control.Monad.Except (runExceptT)
@@ -100,7 +100,7 @@ spec = describe "eval" $ do
       env <- primitiveBindings
       case c of
         Left err -> error (show err)
-        Right code' -> runExceptT $ eval' env code'
+        Right code' -> runExceptT $ eval env code'
 
 main :: IO ()
 main = hspec spec

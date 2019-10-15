@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns            #-}
 
 module Scheme.Interpreter (
-  eval',
+  eval,
   runIOThrows,
   bindVars,
   primitiveBindings
@@ -29,24 +29,24 @@ runIOThrows act = do
   where
     trapError action = catchError action (return . show)
 
-eval' :: Env -> ScmValue -> IOThrowsError ScmValue
-eval' env val = desugarLet val >>= eval env
-
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
-eval _env val@(String _) = return val
-eval _env val@(Number _) = return val
+eval env val = desugarLet val >>= evalCore env
+
+evalCore :: Env -> ScmValue -> IOThrowsError ScmValue
+evalCore _env val@(String _) = return val
+evalCore _env val@(Number _) = return val
 -- `#t`, `#f`
-eval _env val@(Bool _) = return val
+evalCore _env val@(Bool _) = return val
 -- `a`
-eval env (Atom var) = getVar env var
+evalCore env (Atom var) = getVar env var
 -- `'()`
-eval _env (List [Atom "quote", val]) = return val
+evalCore _env (List [Atom "quote", val]) = return val
 -- `(if (= 3 3) 1 2)`
-eval env (List [Atom "if", prediction, left, right]) = do
-  result <- eval env prediction
+evalCore env (List [Atom "if", prediction, left, right]) = do
+  result <- evalCore env prediction
   case result of
-    Bool False -> eval env right
-    _ -> eval env left
+    Bool False -> evalCore env right
+    _ -> evalCore env left
 -- ```
 -- (cond
 --   ((> x 0) 'positive)
@@ -56,56 +56,56 @@ eval env (List [Atom "if", prediction, left, right]) = do
 --   ((< 3 2) 'less))
 -- ;;; 'greater
 -- ```
-eval env (List (Atom "cond" : clauses)) = range clauses
+evalCore env (List (Atom "cond" : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
     range (List (prediction : expr) : rest) = do
-      result <- eval env prediction
+      result <- evalCore env prediction
       case result of
-        Bool True -> last <$> mapM (eval env) expr
+        Bool True -> last <$> mapM (evalCore env) expr
         _ -> range rest
     range bad = throwError $ TypeMismatch "clause" (List bad)
-eval env (List (Atom "case" : key : clauses)) = range clauses
+evalCore env (List (Atom "case" : key : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
-    range [List (Atom "else" : expr)] = last <$> mapM (eval env) expr
+    range [List (Atom "else" : expr)] = last <$> mapM (evalCore env) expr
     range (List (List objects : expr) : rest) = do
       matched <- rangeObjects objects
       case matched of
-        Bool True -> last <$> mapM (eval env) expr
+        Bool True -> last <$> mapM (evalCore env) expr
         _ -> range rest
     range bad = throwError $ TypeMismatch "clause" (List bad)
     rangeObjects [] = return $ Bool False
     rangeObjects (object:rest) = do
-      matched <- eval env (List (Atom "eqv?" : [object, key]))
+      matched <- evalCore env (List (Atom "eqv?" : [object, key]))
       case matched of
         Bool True -> return $ Bool True
         _ -> rangeObjects rest
-eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
+evalCore env (List [Atom "set!", Atom var, form]) = evalCore env form >>= setVar env var
 -- `(define x 1)`
-eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
+evalCore env (List [Atom "define", Atom var, form]) = evalCore env form >>= defineVar env var
 -- `(define (f x y) (+ x y))`
-eval env (List (Atom "define" : List (Atom var : params) : body)) =
+evalCore env (List (Atom "define" : List (Atom var : params) : body)) =
   makeNormalFunc env params body >>= defineVar env var
 -- `(define (f x y . a) (+ x y a))`
-eval env (List (Atom "define" : Pair (Atom var : params) varargs : body)) =
+evalCore env (List (Atom "define" : Pair (Atom var : params) varargs : body)) =
   makeVarArgs varargs env params body >>= defineVar env var
 -- `(lambda (x y) (+ x y))`
-eval env (List (Atom "lambda" : List params : body)) =
+evalCore env (List (Atom "lambda" : List params : body)) =
   makeNormalFunc env params body
-eval env (List (Atom "lambda" : Pair params varargs : body)) =
+evalCore env (List (Atom "lambda" : Pair params varargs : body)) =
   makeVarArgs varargs env params body
-eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
+evalCore env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
-eval env (List [Atom "load", String filename]) =
-  load filename >>= fmap last . mapM (eval env)
+evalCore env (List [Atom "load", String filename]) =
+  load filename >>= fmap last . mapM (evalCore env)
 -- `(+ 1 2 3)`
-eval env (List (function : args)) = do
+evalCore env (List (function : args)) = do
   -- get function value
-  func <- eval env function
-  argVals <- mapM (eval env) args
+  func <- evalCore env function
+  argVals <- mapM (evalCore env) args
   apply func argVals
-eval _env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+evalCore _env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 makeFunc :: Monad m => Maybe String -> Env -> [ScmValue] -> [ScmValue] -> m ScmValue
 makeFunc varargs env params body = return $ Func (map showValue params) varargs body env
@@ -121,7 +121,7 @@ apply Func {params, vararg, body, closure} args =
     then throwError $ NumArgs (toInteger $ length params) args
     else liftIO (bindVars closure $ zip params args) >>= bindVarArgs vararg >>= evalBody
     where
-      evalBody env = last <$> mapM (eval env) body
+      evalBody env = last <$> mapM (evalCore env) body
       bindVarArgs arg env = case arg of
         Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
         Nothing -> return env

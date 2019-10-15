@@ -3,7 +3,7 @@ module InterpreterSpec where
 import SpecHelper
 
 import Scheme.Core (ScmError(..), ScmValue(..))
-import Scheme.Interpreter (eval, primitiveBindings)
+import Scheme.Interpreter (eval', primitiveBindings)
 import Scheme.Parser (readExpr)
 
 import Control.Monad.Except (runExceptT)
@@ -61,6 +61,38 @@ spec = describe "eval" $ do
                [until stop (+ init 1)]))])
            (until 10 1))
       |] `resultIs` Number 11
+    it "" $
+      [str|(let ((x 2) (y 3))
+        (* x y))
+      |] `resultIs` Number 6
+    it "" $
+      [str|(let ((x 2) (y 3))
+              (let ((foo (lambda (z) (+ x y z)))
+                (x 7))
+            (foo 4)))
+      |] `resultIs` Number 9
+    it "" $
+      [str|(let ((x 2) (y 3))
+              (let* ((x 7)
+               (z (+ x y)))
+          (* z x)))
+      |] `resultIs` Number 70
+    it "" $
+      [str|(letrec (
+         (zero? (lambda (n) (= 0 n)))
+      (even?
+        (lambda (n)
+          (if (zero? n)
+            #t
+            (odd? (- n 1)))))
+      (odd?
+        (lambda (n)
+          (if (zero? n)
+            #f
+            (even? (- n 1)))))
+    )
+      (even? 88))
+      |] `resultIs` Bool True
   where
     resultIs code expectedValue = runCode code >>= (`shouldBe` Right expectedValue)
     runCode code = do
@@ -68,7 +100,7 @@ spec = describe "eval" $ do
       env <- primitiveBindings
       case c of
         Left err -> error (show err)
-        Right code' -> runExceptT $ eval env code'
+        Right code' -> runExceptT $ eval' env code'
 
 main :: IO ()
 main = hspec spec

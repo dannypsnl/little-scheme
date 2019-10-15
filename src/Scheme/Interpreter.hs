@@ -2,12 +2,13 @@
 {-# LANGUAGE NamedFieldPuns            #-}
 
 module Scheme.Interpreter (
-  eval,
+  eval',
   runIOThrows,
   bindVars,
   primitiveBindings
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue)
+import Scheme.Interpreter.Transformer (desugarLet)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
 
@@ -27,6 +28,9 @@ runIOThrows act = do
     Left err -> return $ show err
   where
     trapError action = catchError action (return . show)
+
+eval' :: Env -> ScmValue -> IOThrowsError ScmValue
+eval' env val = desugarLet val >>= eval env
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval _env val@(String _) = return val
@@ -93,47 +97,6 @@ eval env (List (Atom "lambda" : Pair params varargs : body)) =
   makeVarArgs varargs env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
-eval env (List (Atom "let" : List bindings : body)) = do
-  -- because `(let ((x 1)) x)` is equal to `((lambda (x) (x)) 1)`
-  -- we use lambda to implement let
-  -- create a lambda
-  params <- mapM takeParam bindings
-  let func = List (Atom "lambda" : List params : body)
-  -- take inits as the argument of lambda
-  args <- mapM takeInit bindings
-  -- apply lambda
-  eval env (List (func : args))
-  where
-    takeParam :: ScmValue -> IOThrowsError ScmValue
-    takeParam (List [Atom var, _]) = return (Atom var)
-    takeParam bad = throwError $ BadSpecialForm "Expect a binding `(var, init)` but got" bad
-    -- @takeInit can believe that bad form already be reject by @takeParam
-    takeInit :: ScmValue -> IOThrowsError ScmValue
-    takeInit (List [_, initExpr]) = return initExpr
-    -- This condition is unlikely happened, but to ensure at future when we move it to others place it still work
-    -- we have to complete the pattern
-    takeInit bad = throwError $ BadSpecialForm "Expect a binding `(var, init)` but got" bad
--- stand for the bad form such as: `(let 1 'body)`
-eval _env (List (Atom "let" : bad : _wrapped)) = throwError $ BadSpecialForm "Expect a list of bindings but got" bad
-eval env (List (Atom "let*" : List bindings : wrappedExpressions)) = eval env convertedToLet
-  where
-    convertedToLet = foldr1 convert (bindings++wrappedExpressions)
-    convert bind wrappedExpr = List [Atom "let", List [bind], wrappedExpr]
-eval env (List (Atom "letrec" : List bindings : wrappedExpressions)) = do
-  -- letrec can be replace by a let with pre init a temp value and set! that var later
-  -- here we pre init the bindings
-  params <- mapM preInit bindings
-  -- here we create a reset bindings expressions
-  setBinds <- reset bindings
-  -- then evaluate a transform let
-  eval env (List (Atom "let" : List params : (setBinds ++ wrappedExpressions)))
-  where
-    preInit :: ScmValue -> IOThrowsError ScmValue
-    preInit (List [Atom var, _]) = return (List [Atom var, List [Atom "quote", Atom var]])
-    preInit bad = throwError $ BadSpecialForm "Expect a binding but got" bad
-    -- @reset can believe that bad form already be reject by @preInit
-    reset :: [ScmValue] -> IOThrowsError [ScmValue]
-    reset binds = return $ map (\(List b) -> List (Atom "set!" : b)) binds
 eval env (List [Atom "load", String filename]) =
   load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`

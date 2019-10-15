@@ -4,7 +4,7 @@ module Scheme (
   , prepareEnv
   , cleanup
 ) where
-import Scheme.Core (Env, ScmValue(Atom, List, String), liftThrows)
+import Scheme.Core (Env, IOThrowsError, ScmValue(Atom, List, String), liftThrows)
 import Scheme.Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
 import Scheme.Meta (defaultLibraryPath, littleSchemePath)
 import Scheme.Parser (readExpr)
@@ -36,19 +36,17 @@ repl env = do
     Just input -> liftIO (evalAndPrint env input) >> repl env
 
 evalAndPrint :: Env -> String -> IO ()
-evalAndPrint env expr = evalString env expr >>= putStrLn
+evalAndPrint env expr = evalString env (liftThrows (readExpr expr)) >>= putStrLn
   where
-    evalString :: Env -> String -> IO String
-    evalString env' expr' = runIOThrows (fmap show $ (liftThrows (readExpr expr')) >>= eval env')
-
+    evalString :: Env -> IOThrowsError ScmValue -> IO String
+    evalString env' expr' = runIOThrows (fmap show $ expr' >>= eval env')
 
 runOne :: [String] -> IO ()
 runOne (file:args) = do
   env <- primitiveBindings >>=  (`bindVars` [("args", List $ map String args)])
   result <- runExceptT (eval env (List [Atom "load", String file]))
   when (isLeft result) (hPrint stderr (show result))
-runOne [] = do
-  putStrLn "No file provided!"
+runOne [] = putStrLn "No file provided!"
 
 initLittleScheme :: IO ()
 initLittleScheme = do

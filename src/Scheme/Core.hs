@@ -70,6 +70,7 @@ data ScmValue =
   | Number Integer
   | String String
   | Bool Bool
+  -- runtime only
   | PrimitiveFunc ([ScmValue] -> ThrowsError ScmValue)
   | Func { params :: [String]
            , vararg :: Maybe String

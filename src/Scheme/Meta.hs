@@ -1,12 +1,12 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Scheme.Meta (
   littleSchemePath
   , defaultLibraryPath
   , stdlibContent
 ) where
-import Scheme.Literal (litFile)
-
+import Data.ByteString (ByteString)
+import Data.FileEmbed (embedFile, makeRelativeToProject)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 
@@ -20,5 +20,5 @@ littleSchemePath = do
   homeDir <- getHomeDirectory
   return $ homeDir </> ".little-scheme"
 
-stdlibContent :: String
-stdlibContent = [litFile|lib/stdlib.scm|]
+stdlibContent :: ByteString
+stdlibContent = $(makeRelativeToProject "lib/stdlib.scm" >>= embedFile)

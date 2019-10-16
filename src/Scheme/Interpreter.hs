@@ -30,7 +30,9 @@ runIOThrows act = do
     trapError action = catchError action (return . show)
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
-eval env val = desugarLet val >>= evalCore env
+eval env val = do
+  val' <- desugarLet val
+  evalCore env val'
 
 evalCore :: Env -> ScmValue -> IOThrowsError ScmValue
 evalCore _env val@(String _) = return val
@@ -98,7 +100,7 @@ evalCore env (List (Atom "lambda" : Pair params varargs : body)) =
 evalCore env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
 evalCore env (List [Atom "load", String filename]) =
-  load filename >>= fmap last . mapM (evalCore env)
+  load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`
 evalCore env (List (function : args)) = do
   -- get function value

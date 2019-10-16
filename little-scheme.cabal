@@ -16,7 +16,7 @@ common shared-properties
     base == 4.*, mtl >= 2.2, filepath >= 1.4, directory >= 1.3, transformers >= 0.5
     , parsec >= 3.1
     , haskeline >= 0.7
-    , template-haskell >= 2.15
+    , template-haskell >= 2.14
   ghc-options:
     -Wall
 

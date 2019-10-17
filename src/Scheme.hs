@@ -1,27 +1,20 @@
 module Scheme (
   createRepl
   , runOne
-  , prepareEnv
   , cleanup
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmValue(Atom, List, String), liftThrows)
 import Scheme.Interpreter (bindVars, eval, primitiveBindings, runIOThrows)
-import Scheme.Meta (defaultLibraryPath, littleSchemePath)
+import Scheme.Meta (littleSchemePath)
 import Scheme.Parser (readExpr)
 
-import Control.Monad (unless, when)
+import Control.Monad (when)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans (liftIO)
 import Data.Either (isLeft)
 import System.Console.Haskeline (InputT, defaultSettings, getInputLine, outputStrLn, runInputT)
-import System.Directory (copyFile, createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
-import System.FilePath ((</>))
+import System.Directory (removeDirectoryRecursive)
 import System.IO (hPrint, stderr)
-
-prepareEnv :: IO ()
-prepareEnv = do
-  std <- littleSchemePath >>= doesDirectoryExist
-  unless std initLittleScheme
 
 createRepl :: IO ()
 createRepl = runInputT defaultSettings (liftIO primitiveBindings >>= repl)
@@ -47,12 +40,6 @@ runOne (file:args) = do
   result <- runExceptT (eval env (List [Atom "load", String file]))
   when (isLeft result) (hPrint stderr (show result))
 runOne [] = putStrLn "No file provided!"
-
-initLittleScheme :: IO ()
-initLittleScheme = do
-  path <- defaultLibraryPath
-  createDirectoryIfMissing True path
-  copyFile "lib/stdlib.scm" (path </> "stdlib.scm")
 
 cleanup :: IO ()
 cleanup = do

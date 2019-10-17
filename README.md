@@ -9,7 +9,9 @@ To install the interpreter you can:
 ```
 git clone https://github.com/dannypsnl/little-scheme.git
 cd little-scheme
-cabal new-install exe:little-scheme
+runhaskell Setup.hs configure --ghc
+runhaskell Setup.hs build
+runhaskell Setup.hs install
 ```
 
 To complete remove all stuffs from Little Scheme you can:

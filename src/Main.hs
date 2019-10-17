@@ -1,11 +1,10 @@
 module Main where
-import Scheme (cleanup, createRepl, prepareEnv, runOne)
+import Scheme (cleanup, createRepl, runOne)
 
 import System.Environment (getArgs)
 
 main :: IO ()
 main = do
-  prepareEnv
   args <- getArgs
   case args of
     [] -> createRepl

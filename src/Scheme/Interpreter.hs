@@ -29,7 +29,17 @@ runIOThrows act = do
   where
     trapError action = catchError action (return . show)
 
+load :: String -> IOThrowsError [ScmValue]
+load filename = liftIO (readFileWithDefaultPath filename) >>= liftThrows . readExprList
+
+readFileWithDefaultPath :: FilePath -> IO String
+readFileWithDefaultPath filename = do
+  libPath <- defaultLibraryPath
+  file <- findFile [libPath] filename
+  readFile (fromMaybe filename file)
+
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
+eval env (List [Atom "load", String filename]) = load filename >>= fmap last . mapM (eval env)
 eval env val = do
   val' <- desugarLet val
   evalCore env val'
@@ -99,8 +109,6 @@ evalCore env (List (Atom "lambda" : Pair params varargs : body)) =
   makeVarArgs varargs env params body
 evalCore env (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarArgs varargs env [] body
-evalCore env (List [Atom "load", String filename]) =
-  load filename >>= fmap last . mapM (eval env)
 -- `(+ 1 2 3)`
 evalCore env (List (function : args)) = do
   -- get function value
@@ -181,15 +189,6 @@ readContents :: [ScmValue] -> IOThrowsError ScmValue
 readContents [String filename] = fmap String $ liftIO $ readFile filename
 readContents [bad] = throwError $ TypeMismatch "string" bad
 readContents bad = throwError $ NumArgs 1 bad
-
-load :: String -> IOThrowsError [ScmValue]
-load filename = liftIO (readFileWithDefaultPath filename) >>= liftThrows . readExprList
-
-readFileWithDefaultPath :: FilePath -> IO String
-readFileWithDefaultPath filename = do
-  libPath <- defaultLibraryPath
-  file <- findFile [libPath] filename
-  readFile (fromMaybe filename file)
 
 readAll :: [ScmValue] -> IOThrowsError ScmValue
 readAll [String filename] = List <$> load filename

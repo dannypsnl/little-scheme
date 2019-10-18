@@ -69,6 +69,7 @@ evalCore env (List [Atom "if", prediction, left, right]) = do
 evalCore env (List (Atom "cond" : clauses)) = range clauses
   where
     range [] = throwError $ NonExhaustivePattern clauses
+    range [List (Atom "else" : expr)] = last <$> mapM (evalCore env) expr
     range (List (prediction : expr) : rest) = do
       result <- evalCore env prediction
       case result of

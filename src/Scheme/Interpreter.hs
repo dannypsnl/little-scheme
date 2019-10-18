@@ -40,9 +40,7 @@ readFileWithDefaultPath filename = do
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env (List [Atom "load", String filename]) = load filename >>= fmap last . mapM (eval env)
-eval env val = do
-  val' <- desugarLet val
-  evalCore env val'
+eval env val = desugarLet val >>= evalCore env
 
 evalCore :: Env -> ScmValue -> IOThrowsError ScmValue
 evalCore _env val@(String _) = return val

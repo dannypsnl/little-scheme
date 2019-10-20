@@ -1,9 +1,26 @@
 module Scheme.Interpreter.Transformer (
-  desugarLet
+  desugarLet,
+  convertToCore
 ) where
 import Scheme.Core (IOThrowsError, ScmError(..), ScmValue(..))
 
 import Control.Monad.Except (throwError)
+
+convertToCore :: ScmValue -> IOThrowsError ScmValue
+convertToCore form@(List (Atom "quote" : _)) = return form
+convertToCore (List (Atom "lambda" : parameters : fBody)) = do
+  (newParams, varargs) <- case parameters of
+    List ps -> return (ps, Nothing)
+    Pair ps (Atom varargs) -> return (ps, Just varargs)
+    Atom varargs -> return ([], Just varargs)
+    bad -> throwError $ Default $ "bad lambda form" ++ show bad
+  Lambda newParams varargs <$> mapM convertToCore fBody
+convertToCore (List l) = List <$> mapM convertToCore l
+convertToCore (Pair l r) = do
+  left <- mapM convertToCore l
+  right <- convertToCore r
+  return $ Pair left right
+convertToCore v = return v
 
 desugarLet :: ScmValue -> IOThrowsError ScmValue
 desugarLet (List (Atom "let" : List bindings : expressions)) = do

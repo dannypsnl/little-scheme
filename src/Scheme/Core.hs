@@ -70,6 +70,10 @@ data ScmValue =
   | Number Integer
   | String String
   | Bool Bool
+  -- core lanuage(reduce List pattern)
+  --
+  -- Lambda parameters vararg body
+  | Lambda [ScmValue] (Maybe String) [ScmValue]
   -- runtime only
   | PrimitiveFunc ([ScmValue] -> ThrowsError ScmValue)
   | Func { params :: [String]

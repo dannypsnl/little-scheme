@@ -8,7 +8,7 @@ module Scheme.Interpreter (
   primitiveBindings
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue)
-import Scheme.Interpreter.Transformer (desugarLet)
+import Scheme.Interpreter.Transformer (convertToCore, desugarLet)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
 
@@ -40,7 +40,7 @@ readFileWithDefaultPath filename = do
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env (List [Atom "load", String filename]) = load filename >>= fmap last . mapM (eval env)
-eval env val = desugarLet val >>= evalCore env
+eval env val = desugarLet val >>= convertToCore >>= evalCore env
 
 evalCore :: Env -> ScmValue -> IOThrowsError ScmValue
 evalCore _env val@(String _) = return val
@@ -102,12 +102,8 @@ evalCore env (List (Atom "define" : List (Atom var : params) : body)) =
 evalCore env (List (Atom "define" : Pair (Atom var : params) varargs : body)) =
   makeVarArgs varargs env params body >>= defineVar env var
 -- `(lambda (x y) (+ x y))`
-evalCore env (List (Atom "lambda" : List params : body)) =
-  makeNormalFunc env params body
-evalCore env (List (Atom "lambda" : Pair params varargs : body)) =
-  makeVarArgs varargs env params body
-evalCore env (List (Atom "lambda" : varargs@(Atom _) : body)) =
-  makeVarArgs varargs env [] body
+evalCore env (Lambda params varargs body) =
+  makeFunc varargs env params body
 -- `(+ 1 2 3)`
 evalCore env (List (function : args)) = do
   -- get function value

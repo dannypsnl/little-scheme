@@ -74,6 +74,8 @@ data ScmValue =
   --
   -- Lambda parameters vararg body
   | Lambda [ScmValue] (Maybe String) [ScmValue]
+  -- If prediction then else
+  | If ScmValue ScmValue ScmValue
   -- runtime only
   | PrimitiveFunc ([ScmValue] -> ThrowsError ScmValue)
   | Func { params :: [String]

@@ -52,7 +52,7 @@ evalCore env (Atom var) = getVar env var
 -- `'()`
 evalCore _env (List [Atom "quote", val]) = return val
 -- `(if (= 3 3) 1 2)`
-evalCore env (List [Atom "if", prediction, left, right]) = do
+evalCore env (If prediction left right) = do
   result <- evalCore env prediction
   case result of
     Bool False -> evalCore env right

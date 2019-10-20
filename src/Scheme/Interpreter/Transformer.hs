@@ -8,6 +8,10 @@ import Control.Monad.Except (throwError)
 
 convertToCore :: ScmValue -> IOThrowsError ScmValue
 convertToCore form@(List (Atom "quote" : _)) = return form
+convertToCore (List [Atom "if", cond, thenB, elseB]) = do
+  thenE <- convertToCore thenB
+  elseE <- convertToCore elseB
+  return $ If cond thenE elseE
 convertToCore (List (Atom "lambda" : parameters : fBody)) = do
   (newParams, varargs) <- case parameters of
     List ps -> return (ps, Nothing)

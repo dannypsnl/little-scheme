@@ -22,7 +22,7 @@ common shared-properties
 executable little-scheme
   import: shared-properties
   main-is:             Main.hs
-  other-modules:       Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
+  other-modules:       Scheme Scheme.Core Scheme.Interpreter Scheme.Transformer Scheme.Parser Scheme.Meta Scheme.Syntax
   build-depends:       little-scheme
   -- Directories containing source files.
   hs-source-dirs:      src
@@ -30,7 +30,7 @@ executable little-scheme
 
 library
   import: shared-properties
-  exposed-modules:     Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
+  exposed-modules:     Scheme Scheme.Core Scheme.Interpreter Scheme.Transformer Scheme.Parser Scheme.Meta Scheme.Syntax
   other-modules:
   -- Directories containing source files.
   hs-source-dirs:      src
@@ -39,7 +39,7 @@ library
 test-suite spec
   import: shared-properties
   type: exitcode-stdio-1.0
-  other-modules: InterpreterSpec Interpreter.TransformerSpec SpecHelper
+  other-modules: InterpreterSpec TransformerSpec SpecHelper
   hs-source-dirs: test
   main-is: Spec.hs
   build-depends: hspec >= 2.7

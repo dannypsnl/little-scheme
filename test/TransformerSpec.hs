@@ -1,9 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
-module Interpreter.TransformerSpec where
+module TransformerSpec where
 import SpecHelper
 
-import Scheme.Interpreter.Transformer (desugarLet)
 import Scheme.Parser (readExpr)
+import Scheme.Transformer (desugarLet)
 
 import Control.Monad.Except (runExceptT)
 

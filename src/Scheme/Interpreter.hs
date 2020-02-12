@@ -8,9 +8,9 @@ module Scheme.Interpreter (
   primitiveBindings
 ) where
 import Scheme.Core (Env, IOThrowsError, ScmError(..), ScmValue(..), ThrowsError, bindVars, defineVar, getVar, liftThrows, nullEnv, setVar, showValue)
-import Scheme.Interpreter.Transformer (convertToCore, desugarLet)
 import Scheme.Meta (defaultLibraryPath)
 import Scheme.Parser (readExpr, readExprList)
+import Scheme.Transformer (desugarLet)
 
 import Control.Monad.Except (catchError, runExceptT, throwError)
 import Control.Monad.Trans (liftIO)
@@ -40,7 +40,7 @@ readFileWithDefaultPath filename = do
 
 eval :: Env -> ScmValue -> IOThrowsError ScmValue
 eval env (List [Atom "load", String filename]) = load filename >>= fmap last . mapM (eval env)
-eval env val = desugarLet val >>= convertToCore >>= evalCore env
+eval env val = desugarLet val >>= evalCore env
 
 evalCore :: Env -> ScmValue -> IOThrowsError ScmValue
 evalCore _env val@(String _) = return val
@@ -52,7 +52,7 @@ evalCore env (Atom var) = getVar env var
 -- `'()`
 evalCore _env (List [Atom "quote", val]) = return val
 -- `(if (= 3 3) 1 2)`
-evalCore env (If prediction left right) = do
+evalCore env (List [Atom "if", prediction, left, right]) = do
   result <- evalCore env prediction
   case result of
     Bool False -> evalCore env right
@@ -102,7 +102,12 @@ evalCore env (List (Atom "define" : List (Atom var : params) : body)) =
 evalCore env (List (Atom "define" : Pair (Atom var : params) varargs : body)) =
   makeVarArgs varargs env params body >>= defineVar env var
 -- `(lambda (x y) (+ x y))`
-evalCore env (Lambda params varargs body) =
+evalCore env (List (Atom "lambda" : parameters : body)) = do
+  (params, varargs) <- case parameters of
+      List ps -> return (ps, Nothing)
+      Pair ps (Atom varargs) -> return (ps, Just varargs)
+      Atom varargs -> return ([], Just varargs)
+      bad -> throwError $ Default $ "bad lambda form" ++ show bad
   makeFunc varargs env params body
 -- `(+ 1 2 3)`
 evalCore env (List (function : args)) = do

@@ -1,5 +1,7 @@
 # nix
 result
+# stack
+.stack-work/
 # cabal
 dist*
 cabal.project.local*

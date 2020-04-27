@@ -1,49 +1,93 @@
-cabal-version:       3.0
+cabal-version: 1.12
 
-name:                little-scheme
-version:             0.1.0.0
-license:             MIT
-license-file:        LICENSE
-author:              dannypsnl
-maintainer:          dannypsnl@gmail.com
--- Extra files to be distributed with the package, such as examples or a
--- README.
-extra-source-files:  CHANGELOG.md
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 834757a962a492b8e1761bfb9463fb6b24cf86ec76928464bafb1181b5beb1bf
 
-common shared-properties
-  default-language: Haskell2010
-  build-depends:
-    base == 4.*, mtl >= 2.2, filepath >= 1.4, directory >= 1.3, transformers >= 0.5
-    , parsec >= 3.1
-    , haskeline >= 0.7
-  ghc-options:
-    -Wall
+name:           little-scheme
+version:        0.1.0.0
+description:    https://github.com/dannypsnl/little-scheme
+homepage:       https://github.com/dannypsnl/little-scheme#readme
+bug-reports:    https://github.com/dannypsnl/little-scheme/issues
+author:         dannypsnl
+maintainer:     dannypsnl@gmail.com
+copyright:      2020 dannypsnl
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
 
-executable little-scheme
-  import: shared-properties
-  main-is:             Main.hs
-  other-modules:       Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
-  build-depends:       little-scheme
-  -- Directories containing source files.
-  hs-source-dirs:      src
-  default-language:    Haskell2010
+source-repository head
+  type: git
+  location: https://github.com/dannypsnl/little-scheme
 
 library
-  import: shared-properties
-  exposed-modules:     Scheme Scheme.Core Scheme.Interpreter Scheme.Interpreter.Transformer Scheme.Parser Scheme.Meta
+  exposed-modules:
+      Scheme
+      Scheme.Core
+      Scheme.Interpreter
+      Scheme.Interpreter.Transformer
+      Scheme.Meta
+      Scheme.Parser
   other-modules:
-  -- Directories containing source files.
-  hs-source-dirs:      src
-  default-language:    Haskell2010
+      Paths_little_scheme
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6
+    , directory >=1.3.6
+    , filepath >=1.4.2.1
+    , haskeline >=0.7.5.0
+    , mtl >=2.2.2
+    , parsec >=3.1
+    , transformers >=0.5.6.2
+  default-language: Haskell2010
 
-test-suite spec
-  import: shared-properties
+executable little-scheme-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_little_scheme
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6
+    , directory >=1.3.6
+    , filepath >=1.4.2.1
+    , haskeline >=0.7.5.0
+    , little-scheme
+    , mtl >=2.2.2
+    , parsec >=3.1
+    , transformers >=0.5.6.2
+  default-language: Haskell2010
+
+test-suite little-scheme-test
   type: exitcode-stdio-1.0
-  other-modules: InterpreterSpec Interpreter.TransformerSpec SpecHelper
-  hs-source-dirs: test
   main-is: Spec.hs
-  build-depends: hspec >= 2.7
-                 , hspec-discover >= 2.7
-                 , template-haskell >= 2.14
-                 , little-scheme
-  default-language:    Haskell2010
+  other-modules:
+      Interpreter.TransformerSpec
+      InterpreterSpec
+      SpecHelper
+      Paths_little_scheme
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6
+    , directory >=1.3.6
+    , filepath >=1.4.2.1
+    , haskeline >=0.7.5.0
+    , hspec
+    , little-scheme
+    , mtl >=2.2.2
+    , parsec >=3.1
+    , template-haskell
+    , transformers >=0.5.6.2
+  default-language: Haskell2010

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 834757a962a492b8e1761bfb9463fb6b24cf86ec76928464bafb1181b5beb1bf
+-- hash: cb454a3cf3a1a24a88f07680180340f399b9311bf6f5dcf583a234c9b6f84c56
 
 name:           little-scheme
 version:        0.1.0.0
@@ -19,7 +19,7 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
-    ChangeLog.md
+    CHANGELOG.md
 
 source-repository head
   type: git

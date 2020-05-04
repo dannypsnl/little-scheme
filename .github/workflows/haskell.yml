@@ -18,10 +18,3 @@ jobs:
           stack build
       - run: |
           stack test
-
-name: build
-jobs:
-  runhaskell:
-    name: Hello World
-    runs-on: ubuntu-latest # or macOS-latest, or windows-latest
-    steps:

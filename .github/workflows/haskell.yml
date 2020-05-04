@@ -8,13 +8,10 @@ jobs:
     strategy:
       matrix:
         ghc: ['8.8.3']
+        stack-version: [latest]
         os: [ubuntu-latest, macOS-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-haskell@v1
-        with:
-          ghc: '8.8.3'
-          stack-version: 'latest'
       - run: |
           stack build
       - run: |

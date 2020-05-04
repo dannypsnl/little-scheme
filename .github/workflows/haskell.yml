@@ -3,21 +3,16 @@ name: Haskell CI
 on: [push, pull_request]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ghc: ['8.8.3']
+        stack-version: [latest]
+        os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-haskell@v1
-        with:
-          ghc-version: "8.6.5" # Exact version of ghc to use
-          cabal-version: "3.0"
+      - uses: actions/checkout@v2
       - run: |
-          cabal new-update
-          cabal new-install --only-dependencies
-          cabal install hspec-discover
-          cabal new-configure --enable-tests
+          stack build
       - run: |
-          cabal new-build
-      - run: |
-          cabal new-test
+          stack test

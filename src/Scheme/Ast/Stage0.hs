@@ -1,16 +1,13 @@
-module Scheme.Ast(
-  ScmAst(..)
+module Scheme.Ast.Stage0 (
+  Stage0(..)
 ) where
 import Data.Text
 import Text.Megaparsec.Pos
 
-data ScmAst =
-  Lambda
-  | Define
-  | Let
+data Stage0 =
+  Quoted SourcePos Stage0
+  | List SourcePos [Stage0]
   -- value
-  | Quoted SourcePos ScmAst
-  | List SourcePos [ScmAst]
   | Bool SourcePos Bool
   | Atom SourcePos Text
   | Number SourcePos Integer

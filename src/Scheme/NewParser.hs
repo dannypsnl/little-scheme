@@ -4,7 +4,7 @@ import Data.Maybe
 import Data.Text
 import qualified Data.Text as T
 import Data.Void
-import Scheme.Ast
+import Scheme.Ast.Stage0
 import Text.Megaparsec
 import Text.Megaparsec.Char hiding (string)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -13,27 +13,27 @@ import Text.Read (readMaybe)
 
 type Parser = Parsec ScmParseError Text
 
-sexpr :: Parser ScmAst
-sexpr = quoted
+expr :: Parser Stage0
+expr = quoted
   <|> bool
   <|> atom
   <|> string
-  <|> list
+  <|> sexpr
 
-list :: Parser ScmAst
-list = do
+sexpr :: Parser Stage0
+sexpr = do
   pos <- getSourcePos
   es <- parens (many sexpr)
   return $ List pos es
 
-quoted :: Parser ScmAst
+quoted :: Parser Stage0
 quoted = do
   pos <- getSourcePos
   symbol "'"
   x <- sexpr
   return $ Quoted pos x
 
-bool :: Parser ScmAst
+bool :: Parser Stage0
 bool = do
   pos <- getSourcePos
   lexeme (symbol "#")
@@ -43,19 +43,19 @@ bool = do
     "f" -> return $ Bool pos False
     a -> customFailure (Message "invalid bool")
 
-atom :: Parser ScmAst
+atom :: Parser Stage0
 atom = do
   pos <- getSourcePos
   id <- identifier
   return $ convert pos id
   where
-    convert :: SourcePos -> Text -> ScmAst
+    convert :: SourcePos -> Text -> Stage0
     convert pos atom
       | isNumber atom = Number pos (read (T.unpack atom))
       | otherwise = Atom pos atom
     isNumber s = isJust (readMaybe (T.unpack s) :: Maybe Integer)
 
-string :: Parser ScmAst
+string :: Parser Stage0
 string = do
   pos <- getSourcePos
   symbol "\""

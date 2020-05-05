@@ -1,5 +1,5 @@
 module Scheme.Ast.Stage2 () where
-import Data.Text
+import Data.Text hiding (foldr1)
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
 import Scheme.Core hiding (ScmValue(..))
@@ -41,3 +41,9 @@ toStage2 (If a b c d) = do
 toStage2 (Application a b) = do
   b <- mapM toStage2 b
   return $ Application_2 a b
+toStage2 (LetStar pos bindings wrappedExpressions) = convertedToLet
+  where
+    convertedToLet = do
+      es <- mapM toStage2 (bindings++wrappedExpressions)
+      return $ foldr1 convert es
+    convert bind wrappedExpr = Let_2 pos [bind] [wrappedExpr]

@@ -47,3 +47,20 @@ toStage2 (LetStar pos bindings wrappedExpressions) = convertedToLet
       es <- mapM toStage2 (bindings++wrappedExpressions)
       return $ foldr1 convert es
     convert bind wrappedExpr = Let_2 pos [bind] [wrappedExpr]
+toStage2 (LetRec pos bindings wrappedExpressions) = do
+  -- letrec can be replace by a let with pre init a temp value and set! that var later
+  -- here we pre init the bindings
+  parameters <- mapM preInit bindings
+  -- here we create a reset bindings expressions
+  setBinds <- reset bindings
+  -- then evaluate a transform let
+  wrappedExpressions <- mapM toStage2 wrappedExpressions
+  return $ Let_2 pos parameters (setBinds ++ wrappedExpressions)
+  where
+    preInit :: Stage1 -> IOThrowsError Stage2
+    preInit (Binding p var _) = return $ (Binding_2 p var (Stage0_2 (Quoted p (Atom p var))))
+    -- we can believe that bad form already be reject by stage1
+    reset :: [Stage1] -> IOThrowsError [Stage2]
+    reset binds = mapM (\(Binding p var e) -> do
+                                                e <- toStage2 e
+                                                return $ Set_2 p var e) binds

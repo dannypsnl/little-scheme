@@ -20,7 +20,7 @@ spec = describe "transform" $ do
         (Define pos "a" Nothing [(Stage0 (Number pos 1))])
     it "define function form" $ do
       (List pos [Atom pos "define", (List pos [Atom pos "a", Atom pos "b"]), Atom pos "b"]) `transResultIs`
-        (Define pos "a" (Just ["b"]) [(Stage0 (Atom pos "b"))])
+        (Define pos "a" (Just [Variable pos "b"]) [(Stage0 (Atom pos "b"))])
     it "define function form without parameters" $ do
       (List pos [Atom pos "define", (List pos [Atom pos "a"]), Atom pos "b"]) `transResultIs`
         (Define pos "a" (Just []) [(Stage0 (Atom pos "b"))])

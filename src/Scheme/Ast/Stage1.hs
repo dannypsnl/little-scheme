@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Scheme.Ast.Stage1 (
   Stage1(..)
+  , Variable(..)
   , toStage1
 ) where
 import Control.Monad.Except (throwError)
@@ -9,12 +10,14 @@ import Scheme.Ast.Stage0
 import Scheme.Core (IOThrowsError, ScmError(..))
 import Text.Megaparsec.Pos
 
+data Variable = Variable SourcePos Text
+  deriving (Show, Eq)
 data Stage1 =
   -- reuse
   Stage0 Stage0
   -- extract structure from s-expression
   -- (lambda parameter... clause...)
-  | Lambda SourcePos [Text] [Stage1]
+  | Lambda SourcePos [Variable] [Stage1]
   -- ;;; variable form
   -- (define a 1)
   -- ;;; function forms
@@ -22,10 +25,10 @@ data Stage1 =
   -- (define (a b c)
   --   (set! b 1)
   --   c)
-  ------------------------------------------------
+  ---------------------------------------------------
   -- Define <pos> <name> <maybe<param+>> <clause+>
-  ------------------------------------------------
-  | Define SourcePos Text (Maybe [Text]) [Stage1]
+  ---------------------------------------------------
+  | Define SourcePos Text (Maybe [Variable]) [Stage1]
   -- (let ([a 1]
   --       [b 2])
   --   a)
@@ -53,8 +56,8 @@ toStage1 (List p ((Atom _ "let") : (List _ bindings) : rest)) = do
 toStage1 (List p bad) = throwError $ Default $ (show p) ++ " unknown form " ++ show bad
 toStage1 stage0 = return $ Stage0 stage0
 
-parameter :: Stage0 -> IOThrowsError Text
-parameter (Atom _ v) = return v
+parameter :: Stage0 -> IOThrowsError Variable
+parameter (Atom p v) = return $ Variable p v
 parameter bad = throwError $ Default $ " bad parameter form " ++ show bad
 
 binding :: Stage0 -> IOThrowsError Stage1

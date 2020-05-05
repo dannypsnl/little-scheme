@@ -28,7 +28,7 @@ spec = describe "transform" $ do
       (List pos [Atom pos "let", (List pos [List pos [Atom pos "a", Number pos 1]]), Atom pos "a"]) `transResultIs`
         (Let pos [Binding pos "a" (Stage0 (Number pos 1))] [(Stage0 (Atom pos "a"))])
   where
-    transResultIs stage0 expectedStage1 = (runExceptT $ fromStage0 stage0) >>= (`shouldBe` Right expectedStage1)
+    transResultIs stage0 expectedStage1 = (runExceptT $ toStage1 stage0) >>= (`shouldBe` Right expectedStage1)
 
 -- pos is dummy value
 pos :: SourcePos

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Scheme.Ast.Stage1 (
   Stage1(..)
-  , fromStage0
+  , toStage1
 ) where
 import Control.Monad.Except (throwError)
 import Data.Text
@@ -33,24 +33,24 @@ data Stage1 =
   | Binding SourcePos Text Stage1
   deriving (Show, Eq)
 
-fromStage0 :: Stage0 -> IOThrowsError Stage1
-fromStage0 (List p ((Atom _ "lambda") : (List _ (params)) : rest)) = do
+toStage1 :: Stage0 -> IOThrowsError Stage1
+toStage1 (List p ((Atom _ "lambda") : (List _ (params)) : rest)) = do
   ps <- mapM parameter params
-  clauses <- mapM fromStage0 rest
+  clauses <- mapM toStage1 rest
   return $ Lambda p ps clauses
-fromStage0 (List p ((Atom _ "define") : (Atom _ name) : rest)) = do
-  clauses <- mapM fromStage0 rest
+toStage1 (List p ((Atom _ "define") : (Atom _ name) : rest)) = do
+  clauses <- mapM toStage1 rest
   return $ Define p name Nothing clauses
-fromStage0 (List p ((Atom _ "define") : (List _ ((Atom _ name) : params)) : rest)) = do
+toStage1 (List p ((Atom _ "define") : (List _ ((Atom _ name) : params)) : rest)) = do
   ps <- mapM parameter params
-  clauses <- mapM fromStage0 rest
+  clauses <- mapM toStage1 rest
   return $ Define p name (Just ps) clauses
-fromStage0 (List p ((Atom _ "let") : (List _ bindings) : rest)) = do
+toStage1 (List p ((Atom _ "let") : (List _ bindings) : rest)) = do
   bs <- mapM binding bindings
-  clauses <- mapM fromStage0 rest
+  clauses <- mapM toStage1 rest
   return $ Let p bs clauses
-fromStage0 (List p bad) = throwError $ Default $ (show p) ++ " unknown form " ++ show bad
-fromStage0 stage0 = return $ Stage0 stage0
+toStage1 (List p bad) = throwError $ Default $ (show p) ++ " unknown form " ++ show bad
+toStage1 stage0 = return $ Stage0 stage0
 
 parameter :: Stage0 -> IOThrowsError Text
 parameter (Atom _ v) = return v
@@ -58,6 +58,6 @@ parameter bad = throwError $ Default $ " bad parameter form " ++ show bad
 
 binding :: Stage0 -> IOThrowsError Stage1
 binding (List p [(Atom _ name), init]) = do
-  initE <- fromStage0 init
+  initE <- toStage1 init
   return $ Binding p name initE
 binding bad = throwError $ Default $ " bad binding form " ++ show bad

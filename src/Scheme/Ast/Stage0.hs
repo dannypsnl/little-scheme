@@ -12,3 +12,4 @@ data Stage0 =
   | Atom SourcePos Text
   | Number SourcePos Integer
   | String SourcePos Text
+  deriving (Show, Eq)

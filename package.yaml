@@ -56,4 +56,5 @@ tests:
     dependencies:
     - little-scheme
     - hspec
+    - hspec-megaparsec
     - template-haskell

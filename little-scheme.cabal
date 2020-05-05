@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a577e7b194bb1321bfd716c9e1e3e6d4196c9e3699fb7e1c78b046a02e0460d8
+-- hash: 8a2c1c3b585ffb2f76ce8d4e43172ea201370146c79449ffb7e79b6ee11a5af6
 
 name:           little-scheme
 version:        0.1.0.0
@@ -80,6 +80,7 @@ test-suite little-scheme-test
   other-modules:
       Interpreter.TransformerSpec
       InterpreterSpec
+      NewParserSpec
       SpecHelper
       Paths_little_scheme
   hs-source-dirs:
@@ -92,6 +93,7 @@ test-suite little-scheme-test
     , filepath >=1.4.2.1
     , haskeline >=0.7.5.0
     , hspec
+    , hspec-megaparsec
     , little-scheme
     , megaparsec >=8.0.0
     , mtl >=2.2.2

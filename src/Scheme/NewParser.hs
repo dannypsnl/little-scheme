@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Scheme.NewParser where
+module Scheme.NewParser (
+  expr
+) where
 import Data.Maybe
 import Data.Text
 import qualified Data.Text as T
@@ -23,14 +25,14 @@ expr = quoted
 sexpr :: Parser Stage0
 sexpr = do
   pos <- getSourcePos
-  es <- parens (many sexpr)
+  es <- parens (many expr)
   return $ List pos es
 
 quoted :: Parser Stage0
 quoted = do
   pos <- getSourcePos
   symbol "'"
-  x <- sexpr
+  x <- expr
   return $ Quoted pos x
 
 bool :: Parser Stage0

@@ -29,6 +29,11 @@ data Stage1 =
   -- Define <pos> <name> <maybe<param+>> <clause+>
   ---------------------------------------------------
   | Define SourcePos Text (Maybe [Variable]) [Stage1]
+  -- (set! x 1)
+  ---------------------------
+  -- Set <pos> <name> <expr>
+  ---------------------------
+  | Set SourcePos Text Stage1
   -- (let ([a 1]
   --       [b 2])
   --   a)
@@ -44,6 +49,9 @@ toStage1 (List p ((Atom _ "lambda") : (List _ (params)) : rest)) = do
   ps <- mapM parameter params
   clauses <- mapM toStage1 rest
   return $ Lambda p ps clauses
+toStage1 (List p [(Atom _ "set!"), (Atom _ name), expr]) = do
+  expr <- toStage1 expr
+  return $ Set p name expr
 toStage1 (List p ((Atom _ "define") : (Atom _ name) : rest)) = do
   clauses <- mapM toStage1 rest
   return $ Define p name Nothing clauses

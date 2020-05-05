@@ -15,6 +15,9 @@ spec = describe "transform" $ do
     it "lambda form" $ do
       (List pos [Atom pos "lambda", List pos [], Number pos 1]) `transResultIs`
         (Lambda pos [] [(Stage0 (Number pos 1))])
+    it "set! form" $ do
+      (List pos [Atom pos "set!", Atom pos "a", Number pos 1]) `transResultIs`
+        (Set pos "a" (Stage0 (Number pos 1)))
     it "define variable form" $ do
       (List pos [Atom pos "define", Atom pos "a", Number pos 1]) `transResultIs`
         (Define pos "a" Nothing [(Stage0 (Number pos 1))])

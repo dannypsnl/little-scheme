@@ -19,8 +19,8 @@ bool = do
   lexeme (symbol "#")
   boolValue <- identifier
   case boolValue of
-    "t" -> return $ ScmAst { pos = pos, sExpr = Bool True}
-    "f" -> return $ ScmAst { pos = pos, sExpr = Bool False}
+    "t" -> return $ Bool pos True
+    "f" -> return $ Bool pos False
     a -> customFailure (Message "invalid bool")
 
 atom :: Parser ScmAst
@@ -31,8 +31,8 @@ atom = do
   where
     convert :: SourcePos -> Text -> ScmAst
     convert pos atom
-      | isNumber atom = ScmAst{ pos=pos, sExpr=Number (read (T.unpack atom))}
-      | otherwise = ScmAst{pos=pos, sExpr=Atom atom}
+      | isNumber atom = Number pos (read (T.unpack atom))
+      | otherwise = Atom pos atom
     isNumber s = isJust (readMaybe (T.unpack s) :: Maybe Integer)
 
 identifier :: Parser Text

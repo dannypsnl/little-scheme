@@ -1,18 +1,13 @@
 module Scheme.Ast(
   ScmAst(..)
-  , ScmExpr(..)
 ) where
 import Data.Text
 import Text.Megaparsec.Pos
 
-data ScmAst = ScmAst {
-  pos :: SourcePos
-  , sExpr :: ScmExpr }
-
-data ScmExpr =
+data ScmAst =
   Lambda
   | Define
   | Let
-  | Bool Bool
-  | Atom Text
-  | Number Integer
+  | Bool SourcePos Bool
+  | Atom SourcePos Text
+  | Number SourcePos Integer

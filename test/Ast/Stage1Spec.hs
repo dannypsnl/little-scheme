@@ -18,6 +18,9 @@ spec = describe "transform" $ do
     it "set! form" $ do
       (List pos [Atom pos "set!", Atom pos "a", Number pos 1]) `transResultIs`
         (Set pos "a" (Stage0 (Number pos 1)))
+    it "if form" $ do
+      (List pos [Atom pos "if", (List pos [Atom pos "=", Atom pos "a", Atom pos "b"]), Number pos 1, Number pos 2]) `transResultIs`
+        (If pos (Application pos [(Stage0 (Atom pos "=")), (Stage0 $ Atom pos "a"), (Stage0 $ Atom pos "b")]) (Stage0 (Number pos 1)) (Stage0 (Number pos 2)))
     it "define variable form" $ do
       (List pos [Atom pos "define", Atom pos "a", Number pos 1]) `transResultIs`
         (Define pos "a" Nothing [(Stage0 (Number pos 1))])

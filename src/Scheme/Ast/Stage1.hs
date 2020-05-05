@@ -40,8 +40,16 @@ data Stage1 =
   | Let SourcePos [Stage1] [Stage1]
   | LetStar SourcePos [Stage1] [Stage1]
   | LetRec SourcePos [Stage1] [Stage1]
-  -- TODO: if, cond, case, <application>
   | Binding SourcePos Text Stage1
+  -- (if prediction
+  --   thenE
+  --   elseE)
+  -----------------------------------
+  -- if <prediction> <thenE> <elseE>
+  -----------------------------------
+  | If SourcePos Stage1 Stage1 Stage1
+  | Application SourcePos [Stage1]
+  -- TODO: cond, case
   deriving (Show, Eq)
 
 toStage1 :: Stage0 -> IOThrowsError Stage1
@@ -52,6 +60,11 @@ toStage1 (List p ((Atom _ "lambda") : (List _ (params)) : rest)) = do
 toStage1 (List p [(Atom _ "set!"), (Atom _ name), expr]) = do
   expr <- toStage1 expr
   return $ Set p name expr
+toStage1 (List p [(Atom _ "if"), pred, thenE, elseE]) = do
+  pred <- toStage1 pred
+  e1 <- toStage1 thenE
+  e2 <- toStage1 elseE
+  return $ If p pred e1 e2
 toStage1 (List p ((Atom _ "define") : (Atom _ name) : rest)) = do
   clauses <- mapM toStage1 rest
   return $ Define p name Nothing clauses
@@ -71,7 +84,9 @@ toStage1 (List p ((Atom _ "letrec") : (List _ bindings) : rest)) = do
   bs <- mapM binding bindings
   clauses <- mapM toStage1 rest
   return $ LetRec p bs clauses
-toStage1 (List p bad) = throwError $ Default $ (show p) ++ " unknown form " ++ show bad
+toStage1 (List p es) = do
+  es <- mapM toStage1 es
+  return $ Application p es
 toStage1 stage0 = return $ Stage0 stage0
 
 parameter :: Stage0 -> IOThrowsError Variable

@@ -7,7 +7,7 @@ module Scheme.Ast.Stage1 (
 import Control.Monad.Except (throwError)
 import Data.Text
 import Scheme.Ast.Stage0
-import Scheme.Core (IOThrowsError, ScmError(..))
+import Scheme.Core hiding (ScmValue(..))
 import Text.Megaparsec.Pos
 
 data Variable = Variable SourcePos Text

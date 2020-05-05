@@ -27,6 +27,12 @@ spec = describe "transform" $ do
     it "let form" $ do
       (List pos [Atom pos "let", (List pos [List pos [Atom pos "a", Number pos 1]]), Atom pos "a"]) `transResultIs`
         (Let pos [Binding pos "a" (Stage0 (Number pos 1))] [(Stage0 (Atom pos "a"))])
+    it "let* form" $ do
+      (List pos [Atom pos "let*", (List pos [List pos [Atom pos "a", Number pos 1]]), Atom pos "a"]) `transResultIs`
+        (LetStar pos [Binding pos "a" (Stage0 (Number pos 1))] [(Stage0 (Atom pos "a"))])
+    it "letrec form" $ do
+      (List pos [Atom pos "letrec", (List pos [List pos [Atom pos "a", Number pos 1]]), Atom pos "a"]) `transResultIs`
+        (LetRec pos [Binding pos "a" (Stage0 (Number pos 1))] [(Stage0 (Atom pos "a"))])
   where
     transResultIs stage0 expectedStage1 = (runExceptT $ toStage1 stage0) >>= (`shouldBe` Right expectedStage1)
 

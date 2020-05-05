@@ -33,7 +33,9 @@ data Stage1 =
   --       [b 2])
   --   a)
   | Let SourcePos [Stage1] [Stage1]
-  -- TODO: letrec, let*, if, cond, case, <application>
+  | LetStar SourcePos [Stage1] [Stage1]
+  | LetRec SourcePos [Stage1] [Stage1]
+  -- TODO: if, cond, case, <application>
   | Binding SourcePos Text Stage1
   deriving (Show, Eq)
 
@@ -53,6 +55,14 @@ toStage1 (List p ((Atom _ "let") : (List _ bindings) : rest)) = do
   bs <- mapM binding bindings
   clauses <- mapM toStage1 rest
   return $ Let p bs clauses
+toStage1 (List p ((Atom _ "let*") : (List _ bindings) : rest)) = do
+  bs <- mapM binding bindings
+  clauses <- mapM toStage1 rest
+  return $ LetStar p bs clauses
+toStage1 (List p ((Atom _ "letrec") : (List _ bindings) : rest)) = do
+  bs <- mapM binding bindings
+  clauses <- mapM toStage1 rest
+  return $ LetRec p bs clauses
 toStage1 (List p bad) = throwError $ Default $ (show p) ++ " unknown form " ++ show bad
 toStage1 stage0 = return $ Stage0 stage0
 

@@ -30,6 +30,7 @@ data Stage1 =
   --       [b 2])
   --   a)
   | Let SourcePos [Stage1] [Stage1]
+  -- TODO: letrec, let*, if, cond, case, <application>
   | Binding SourcePos Text Stage1
   deriving (Show, Eq)
 

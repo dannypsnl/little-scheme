@@ -1,4 +1,7 @@
-module Scheme.Ast.Core () where
+module Scheme.Ast.Core (
+  Core(..)
+  , toCore
+) where
 import Data.Text hiding (head, tail)
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1

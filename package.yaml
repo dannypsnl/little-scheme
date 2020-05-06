@@ -51,6 +51,7 @@ tests:
     source-dirs:         test
     ghc-options:
     - -threaded
+    - -Wall
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:

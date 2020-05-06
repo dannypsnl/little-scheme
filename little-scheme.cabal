@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 413e890183d33e814151bf337e1767db9cf40131143c6a4ddf07b30f46a4e4a7
+-- hash: b6b240cace9e5b37600326c882167e584b8553e2d1596bb3381278bc0993ea4b
 
 name:           little-scheme
 version:        0.1.0.0
@@ -92,7 +92,7 @@ test-suite little-scheme-test
       Paths_little_scheme
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -Wall -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers >=0.6

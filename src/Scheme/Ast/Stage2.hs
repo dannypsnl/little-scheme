@@ -1,4 +1,7 @@
-module Scheme.Ast.Stage2 () where
+module Scheme.Ast.Stage2 (
+  Stage2(..)
+  , toStage2
+) where
 import Data.Text hiding (foldr1)
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
@@ -13,6 +16,7 @@ data Stage2 = Stage0_2 Stage0
   | Binding_2 SourcePos Text Stage2
   | If_2 SourcePos Stage2 Stage2 Stage2
   | Application_2 SourcePos [Stage2]
+  deriving (Show, Eq)
 
 -- transform `let*` and `letrec` to `let`
 toStage2 :: Stage1 -> IOThrowsError Stage2

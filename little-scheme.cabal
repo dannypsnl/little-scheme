@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7a1d9021973c9b874b78de80a8af58876db1aa3c48bf107ce6db5095a517f09b
+-- hash: 4535cb50bfb2ef886a79dacb50fca87899c3f4483b136ea55ca44ab1b37ff1ec
 
 name:           little-scheme
 version:        0.1.0.0
@@ -82,6 +82,7 @@ test-suite little-scheme-test
   other-modules:
       Ast.Stage1Spec
       Ast.Stage2Spec
+      Ast.Stage3Spec
       Interpreter.TransformerSpec
       InterpreterSpec
       NewParserSpec

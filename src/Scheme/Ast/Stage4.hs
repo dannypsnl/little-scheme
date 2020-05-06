@@ -3,7 +3,7 @@ module Scheme.Ast.Stage4 (
   , toStage4
 ) where
 import Control.Monad.Except (throwError)
-import Data.Text hiding (foldr1)
+import Data.Text
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
 import Scheme.Ast.Stage3

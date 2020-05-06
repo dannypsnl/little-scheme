@@ -2,7 +2,7 @@ module Scheme.Ast.Stage3 (
   Stage3(..)
   , toStage3
 ) where
-import Data.Text hiding (foldr1)
+import Data.Text
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
 import Scheme.Ast.Stage2

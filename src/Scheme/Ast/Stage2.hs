@@ -69,4 +69,3 @@ toStage2 (If a b c d) = do
 toStage2 (Application a b) = do
   b <- mapM toStage2 b
   return $ Application_2 a b
-

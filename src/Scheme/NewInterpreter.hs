@@ -19,6 +19,10 @@ evalCore env (CoreDefine pos name expr) = do
   expr <- evalCore env expr
   r <- defineVar env name expr
   return $ r
+evalCore env (CoreSet pos name expr) = do
+  expr <- evalCore env expr
+  r <- setVar env name expr
+  return $ r
 
 -- Env
 type Env = IORef (Map Text (IORef Core))

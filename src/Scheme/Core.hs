@@ -8,7 +8,6 @@ module Scheme.Core (
   , IOThrowsError
   , unwordsList
   , showValue
-  , isBound
   , getVar
   , setVar
   , defineVar

@@ -23,6 +23,11 @@ evalCore env (CoreSet pos name expr) = do
   expr <- evalCore env expr
   r <- setVar env name expr
   return $ r
+evalCore env (CoreIf pos pred thenE elseE) = do
+  result <- evalCore env pred
+  case result of
+    CoreBool _ True -> evalCore env thenE
+    _ -> evalCore env elseE
 
 -- Env
 type Env = IORef (Map Text (IORef Core))

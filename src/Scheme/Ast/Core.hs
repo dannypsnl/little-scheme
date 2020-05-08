@@ -28,7 +28,7 @@ import Text.Megaparsec.Pos
 data Core = CoreNumber SourcePos Integer
   | CoreBool SourcePos Bool
   | CoreString SourcePos Text
-  | CoreQouted SourcePos [Stage0]
+  | CoreQouted SourcePos Stage0
   | CoreLambda SourcePos [Variable] [Core]
   | CoreDefine SourcePos Text Core
   | CoreSet SourcePos Text Core
@@ -55,6 +55,13 @@ data Runtime = PrimitiveFunc ([Core] -> ThrowsError Core)
   | Port Handle
 
 toCore :: Stage4 -> IOThrowsError Core
+toCore (Stage0_4 stage0) = return $ stage0ToCore stage0
+  where
+    stage0ToCore :: Stage0 -> Core
+    stage0ToCore (Quoted pos v) = CoreQouted pos v
+    stage0ToCore (Bool pos v) = CoreBool pos v
+    stage0ToCore (Number pos v) = CoreNumber pos v
+    stage0ToCore (String pos v) = CoreString pos v
 toCore (Lambda_4 pos params body) = do
   body <- mapM toCore body
   return $ CoreLambda pos params body

@@ -157,9 +157,7 @@ ioPrimitives = [
 applyProc :: [ScmValue] -> IOThrowsError ScmValue
 -- (apply f '(1 2 3))
 applyProc [func, List args] = apply func args
--- (apply f 1 2 3)
-applyProc (func : args) = apply func args
-applyProc bad = throwError $ Default ("expected a function and a list of arguments or a list with a function as head but got: " ++ show bad)
+applyProc bad = throwError $ Default ("expected a list with a function as head but got: " ++ show bad)
 
 makePort :: IOMode -> [ScmValue] -> IOThrowsError ScmValue
 makePort mode [String filename] = fmap Port $ liftIO $ openFile filename mode

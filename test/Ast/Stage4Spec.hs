@@ -9,6 +9,7 @@ import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
 import Scheme.Ast.Stage3
 import Scheme.Ast.Stage4
+import Scheme.Ast.Trans
 
 spec :: Spec
 spec = describe "transform" $ do

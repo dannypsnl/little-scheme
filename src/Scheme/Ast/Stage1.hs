@@ -2,12 +2,10 @@
 module Scheme.Ast.Stage1 (
   Stage1(..)
   , Variable(..)
-  , toStage1
 ) where
 import Control.Monad.Except (throwError)
 import Data.Text
 import Scheme.Ast.Stage0
-import Scheme.Core hiding (ScmValue(..))
 import Text.Megaparsec.Pos
 
 data Variable = Variable SourcePos Text
@@ -51,50 +49,3 @@ data Stage1 =
   | Application SourcePos [Stage1]
   -- TODO: cond, case
   deriving (Show, Eq)
-
-toStage1 :: Stage0 -> IOThrowsError Stage1
-toStage1 (List p ((Atom _ "lambda") : (List _ (params)) : rest)) = do
-  ps <- mapM parameter params
-  clauses <- mapM toStage1 rest
-  return $ Lambda p ps clauses
-toStage1 (List p [(Atom _ "set!"), (Atom _ name), expr]) = do
-  expr <- toStage1 expr
-  return $ Set p name expr
-toStage1 (List p [(Atom _ "if"), pred, thenE, elseE]) = do
-  pred <- toStage1 pred
-  e1 <- toStage1 thenE
-  e2 <- toStage1 elseE
-  return $ If p pred e1 e2
-toStage1 (List p ((Atom _ "define") : (Atom _ name) : rest)) = do
-  clauses <- mapM toStage1 rest
-  return $ Define p name Nothing clauses
-toStage1 (List p ((Atom _ "define") : (List _ ((Atom _ name) : params)) : rest)) = do
-  ps <- mapM parameter params
-  clauses <- mapM toStage1 rest
-  return $ Define p name (Just ps) clauses
-toStage1 (List p ((Atom _ "let") : (List _ bindings) : rest)) = do
-  bs <- mapM binding bindings
-  clauses <- mapM toStage1 rest
-  return $ Let p bs clauses
-toStage1 (List p ((Atom _ "let*") : (List _ bindings) : rest)) = do
-  bs <- mapM binding bindings
-  clauses <- mapM toStage1 rest
-  return $ LetStar p bs clauses
-toStage1 (List p ((Atom _ "letrec") : (List _ bindings) : rest)) = do
-  bs <- mapM binding bindings
-  clauses <- mapM toStage1 rest
-  return $ LetRec p bs clauses
-toStage1 (List p es) = do
-  es <- mapM toStage1 es
-  return $ Application p es
-toStage1 stage0 = return $ Stage0 stage0
-
-parameter :: Stage0 -> IOThrowsError Variable
-parameter (Atom p v) = return $ Variable p v
-parameter bad = throwError $ Default $ " bad parameter form " ++ show bad
-
-binding :: Stage0 -> IOThrowsError Stage1
-binding (List p [(Atom _ name), init]) = do
-  initE <- toStage1 init
-  return $ Binding p name initE
-binding bad = throwError $ Default $ " bad binding form " ++ show bad

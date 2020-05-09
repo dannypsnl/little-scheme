@@ -2,7 +2,6 @@
 module Scheme.Ast.Core (
   Core(..)
   , getPos
-  , toCore
   , Runtime(..)
   , Env
   , EnvImpl(..)
@@ -21,8 +20,9 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Scheme.Ast.Stage0
 import Scheme.Ast.Stage1
-import Scheme.Ast.Stage4
+import Scheme.NewParser (ScmParseError)
 import System.IO (Handle)
+import Text.Megaparsec.Error
 import Text.Megaparsec.Pos
 
 data Core = CoreNumber SourcePos Integer
@@ -53,32 +53,6 @@ data Runtime = PrimitiveFunc ([Core] -> ThrowsError Core)
   | Func [Text] (Maybe Text) [Core] Env
   | IOFunc ([Core] -> IOThrowsError Core)
   | Port Handle
-
-toCore :: Stage4 -> IOThrowsError Core
-toCore (Stage0_4 stage0) = return $ stage0ToCore stage0
-  where
-    stage0ToCore :: Stage0 -> Core
-    stage0ToCore (Quoted pos v) = CoreQouted pos v
-    stage0ToCore (Bool pos v) = CoreBool pos v
-    stage0ToCore (Number pos v) = CoreNumber pos v
-    stage0ToCore (String pos v) = CoreString pos v
-toCore (Lambda_4 pos params body) = do
-  body <- mapM toCore body
-  return $ CoreLambda pos params body
-toCore (Define_4 pos name expr) = do
-  expr <- toCore expr
-  return $ CoreDefine pos name expr
-toCore (Set_4 pos name expr) = do
-  expr <- toCore expr
-  return $ CoreSet pos name expr
-toCore (If_4 pos pred thenE elseE) = do
-  pred <- toCore pred
-  thenE <- toCore thenE
-  elseE <- toCore elseE
-  return $ CoreIf pos pred thenE elseE
-toCore (Application_4 pos expressions) = do
-  exprs <- mapM toCore expressions
-  return $ CoreApplication pos (head exprs) (tail exprs)
 
 -- Env
 data EnvImpl = EnvImpl {
@@ -165,7 +139,6 @@ data ScmError =
   | UnboundVar SourcePos String String
   | Default SourcePos String
   | NonExhaustivePattern SourcePos [Core]
-
 
 instance Eq ScmError where
   (==) l r = show l == show r

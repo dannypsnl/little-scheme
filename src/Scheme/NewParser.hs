@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Scheme.NewParser (
   expr
+  , ScmParseError(..)
 ) where
 import Data.Maybe
 import Data.Text

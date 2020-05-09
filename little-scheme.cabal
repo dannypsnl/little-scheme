@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6c5990a33619d81cc31f342140d72fe32dbe5174da38dc7c70dccbe820f319cf
+-- hash: 74eefaa872271b8f98cc1467d525a605787db0bef5b0679c9599180311671597
 
 name:           little-scheme
 version:        0.1.0.0
@@ -34,6 +34,7 @@ library
       Scheme.Ast.Stage2
       Scheme.Ast.Stage3
       Scheme.Ast.Stage4
+      Scheme.Ast.Trans
       Scheme.Core
       Scheme.Interpreter
       Scheme.Interpreter.Transformer

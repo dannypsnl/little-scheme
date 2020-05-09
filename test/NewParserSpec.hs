@@ -3,7 +3,6 @@ module NewParserSpec where
 import SpecHelper
 import Test.Hspec.Megaparsec
 import Text.Megaparsec
-import Text.Megaparsec.Pos
 
 import Scheme.Ast.Stage0
 import Scheme.NewParser

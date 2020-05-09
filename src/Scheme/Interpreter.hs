@@ -309,12 +309,6 @@ numberBinaryOp op parameters = Number . foldl1 op <$> mapM unpackNumber paramete
 unpackString :: ScmValue -> ThrowsError String
 -- Normal format, `"abcd"`
 unpackString (String s) = return s
--- Number can be a string for string functions
--- e.g. `(string=? 1 "1")`
-unpackString (Number s) = return $ show s
--- Bool can be a string for string functions
--- e.g. `(string=? "#t" #t)`
-unpackString (Bool s) = return $ show s
 unpackString notString = throwError $ TypeMismatch "string" notString
 
 unpackBool :: ScmValue -> ThrowsError Bool
@@ -324,11 +318,4 @@ unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
 unpackNumber :: ScmValue -> ThrowsError Integer
 -- Normal format `1`, `2`, `10`
 unpackNumber (Number n) = return n
--- String can be a number for function takes number, e.g. `(+ 1 "2")`
-unpackNumber (String n) = case readMaybe n of
-  Nothing -> throwError $ TypeMismatch "number" $ String n
-  Just a -> return a
--- When list only contains one element then we can use it as number
--- e.g. `(+ 1 '(2))`
-unpackNumber (List [n]) = unpackNumber n
 unpackNumber notNum = throwError $ TypeMismatch "number" notNum

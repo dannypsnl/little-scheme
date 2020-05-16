@@ -3,12 +3,10 @@ module Scheme.Ast.Core (
   Core(..)
   , getPos
   , Runtime(..)
-  , Env
-  , EnvImpl(..)
+  , Env, EnvImpl(..) , nullEnv
   , setVar, getVar, defineVar
   , ScmError(..)
-  , IOThrowsError, ThrowsError
-  , liftThrows
+  , IOThrowsError, ThrowsError, liftThrows
 ) where
 import Control.Monad.Except
 import Control.Monad.Trans
@@ -59,6 +57,8 @@ data EnvImpl = EnvImpl {
   env :: Map Text (IORef Core)
   , parentEnv :: Maybe Env }
 type Env = IORef EnvImpl
+nullEnv :: IO Env
+nullEnv = newIORef EnvImpl { env=Map.empty, parentEnv=Nothing }
 
 getVar :: Env -> SourcePos -> Text -> IOThrowsError Core
 getVar envRef pos var = do

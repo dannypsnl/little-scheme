@@ -35,6 +35,3 @@ spec = describe "transform" $ do
   where
     transResultIs stage1 expectedStage2 = (runExceptT $ toStage2 stage1) >>= (`shouldBe` Right expectedStage2)
 
--- pos is dummy value
-pos :: SourcePos
-pos = (SourcePos "" pos1 pos1)

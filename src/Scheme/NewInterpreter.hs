@@ -1,6 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
-module Scheme.NewInterpreter () where
+module Scheme.NewInterpreter (
+  evalCore
+) where
 import Control.Monad.Except
 import Control.Monad.Trans
 import Data.Maybe
@@ -61,7 +63,7 @@ apply (CoreRuntime pos (Func params vararg body closure)) args =
 apply (CoreRuntime pos (IOFunc f)) args = f args
 apply bad _ = throwError $  NotFunction (getPos bad) "Applying a not function value" bad
 
--- primitives
+-- io primitives
 ioPrimitives :: [(Text, SourcePos -> [Core] -> IOThrowsError Core)]
 ioPrimitives = [
   ("apply", applyProc)

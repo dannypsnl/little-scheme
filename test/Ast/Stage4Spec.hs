@@ -31,7 +31,3 @@ spec = describe "transform" $ do
           (Lambda_4 pos [Variable pos "a"] [Stage0_4 (Atom pos "a")]))
   where
     transResultIs stage3 expectedStage4 = (runExceptT $ toStage4 stage3) >>= (`shouldBe` Right expectedStage4)
-
--- pos is dummy value
-pos :: SourcePos
-pos = (SourcePos "" pos1 pos1)
